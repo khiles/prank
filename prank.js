@@ -94,6 +94,17 @@
             notHolding: "You are not holding anything",
             giveTo: "gives",
             giveSuffix: "to",
+            noBra: "has no bra",
+            noHat: "has no hat",
+            stealBra: "sneakily unclasps",
+            stealBraSuffix: "'s bra, sending it flying! 👙",
+            stealHat: "swipes",
+            stealHatSuffix: "'s hat and puts it on 🎩",
+            dyeHair: "sneaks up and dyes",
+            dyeHairSuffix: "'s hair in wild colors! 💇",
+            dyeOwnHair: "dyes their own hair in wild colors! 💇",
+            swapOutfits: "and",
+            swapOutfitsSuffix: "mysteriously swap outfits! 👗",
 
             // Activity labels
             actCutClothes: "Cut Clothes",
@@ -105,6 +116,9 @@
             actRemoveHoldSocks: "Take Socks",
             actPluckingHair: "Pluck Ahoge",
             actDyeClothes: "Rainbow Dye",
+            actStealBra: "Steal Bra",
+            actStealHat: "Steal Hat",
+            actDyeHair: "Dye Hair",
 
             // Activity descriptions
             actCutClothesDesc: "SourceCharacter cuts off TargetCharacter's clothes using scissors",
@@ -120,7 +134,11 @@
             actRemoveHoldSocksDesc: "SourceCharacter pulls off TargetCharacter's socks and holds them",
             actRemoveHoldSocksSelf: "SourceCharacter pulls off their own socks and holds them",
             actDyeClothesDesc: "SourceCharacter splashes a rainbow potion on TargetCharacter's outfit",
-            actDyeClothesSelf: "SourceCharacter splashes a rainbow potion all over their own outfit"
+            actDyeClothesSelf: "SourceCharacter splashes a rainbow potion all over their own outfit",
+            actStealBraDesc: "SourceCharacter sneakily unclasps TargetCharacter's bra",
+            actStealHatDesc: "SourceCharacter swipes TargetCharacter's hat and puts it on",
+            actDyeHairDesc: "SourceCharacter sneaks up and dyes TargetCharacter's hair in wild colors",
+            actDyeHairSelf: "SourceCharacter dyes their own hair in wild colors"
         }
     };
 
@@ -605,6 +623,91 @@
         return true;
     }
 
+    function stealBra(target) {
+        const bra = InventoryGet(target, "Bra");
+        if (!bra) return false;
+        InventoryRemove(target, "Bra");
+        ChatRoomCharacterUpdate(target);
+        return true;
+    }
+
+    function stealHat(target) {
+        const hat = InventoryGet(target, "Hat");
+        if (!hat) return false;
+        const assetName = hat.Asset?.Name;
+        const color = hat.Color || "Default";
+        InventoryRemove(target, "Hat");
+        ChatRoomCharacterUpdate(target);
+        try {
+            InventoryRemove(Player, "Hat");
+            InventoryWear(Player, assetName, "Hat", color, 0, target.MemberNumber, hat.Craft || {});
+            ChatRoomCharacterUpdate(Player);
+        } catch (e) {
+            console.log("[prank] Could not put hat on player:", e);
+        }
+        return true;
+    }
+
+    function dyeHair(target) {
+        const hairGroups = ["HairFront", "HairBack", "HairAccessory1", "HairAccessory2", "HairAccessory3"];
+        const bundle = ServerAppearanceBundle(target.Appearance).map(item => {
+            if (hairGroups.includes(item.Group)) {
+                if (Array.isArray(item.Color)) {
+                    item.Color = item.Color.map(() => getRandomColor());
+                } else {
+                    item.Color = getRandomColor();
+                }
+            }
+            return item;
+        });
+        ServerSend("ChatRoomCharacterUpdate", {
+            ID: target.ID === 0 ? target.OnlineID : target.AccountName.replace("Online-", ""),
+            ActivePose: target.ActivePose,
+            Appearance: bundle
+        });
+    }
+
+    function swapOutfits(args) {
+        try {
+            const targetArg = (args || "").trim();
+            if (!targetArg) return chatSendLocal("Usage: /swap <player name or number>");
+
+            const target = getPlayer(targetArg);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            if (target.MemberNumber === Player.MemberNumber) return chatSendLocal("You can't swap with yourself");
+            if (!hasBCItemPermission(target)) return chatSendLocal(getMessage('noPermission'));
+
+            const clothingGroups = [
+                "Cloth", "ClothLower", "Bra", "Panties", "Socks", "SocksRight", "SocksLeft",
+                "Shoes", "Gloves", "Hat", "Suit", "SuitLower", "Corset", "ClothOuter", "ClothAccessory"
+            ];
+
+            const playerBundle = ServerAppearanceBundle(Player.Appearance);
+            const targetBundle = ServerAppearanceBundle(target.Appearance);
+
+            const playerClothes = playerBundle.filter(i => clothingGroups.includes(i.Group));
+            const playerOther   = playerBundle.filter(i => !clothingGroups.includes(i.Group));
+            const targetClothes = targetBundle.filter(i => clothingGroups.includes(i.Group));
+            const targetOther   = targetBundle.filter(i => !clothingGroups.includes(i.Group));
+
+            ServerSend("ChatRoomCharacterUpdate", {
+                ID: Player.ID === 0 ? Player.OnlineID : Player.AccountName.replace("Online-", ""),
+                ActivePose: Player.ActivePose,
+                Appearance: [...playerOther, ...targetClothes]
+            });
+
+            ServerSend("ChatRoomCharacterUpdate", {
+                ID: target.ID === 0 ? target.OnlineID : target.AccountName.replace("Online-", ""),
+                ActivePose: target.ActivePose,
+                Appearance: [...targetOther, ...playerClothes]
+            });
+
+            chatSendCustomAction(getNickname(Player) + " " + getMessage('swapOutfits') + " " + getNickname(target) + " " + getMessage('swapOutfitsSuffix'));
+        } catch (error) {
+            console.error("Error in swapOutfits:", error);
+        }
+    }
+
     function dyeClothes(target) {
         const clothingGroups = [
             "Cloth", "ClothLower", "Bra", "Panties", "Socks", "SocksRight", "SocksLeft",
@@ -714,6 +817,14 @@
 
         actData.CustomPrerequisiteFuncs.set("lsccHasAhoge", function(target1, target2, group) {
             return !!(InventoryGet(target2, "额外头发_Luzi"))
+        });
+
+        actData.CustomPrerequisiteFuncs.set("lsccHasBra", function(target1, target2, group) {
+            return !!InventoryGet(target2, "Bra");
+        });
+
+        actData.CustomPrerequisiteFuncs.set("lsccHasHat", function(target1, target2, group) {
+            return !!InventoryGet(target2, "Hat");
         });
 
         const clothingTargets = [
@@ -1038,7 +1149,106 @@
             CustomImage: ImagePathHelper.getAssetURL("Female3DCG/ItemHood/Preview/Pantyhose.png")
         });
 
-        // 9. Rainbow Dye
+        // 9. Steal Bra
+        AddActivity({
+            Activity: {
+                Name: "StealBra",
+                MaxProgress: 50,
+                MaxProgressSelf: 50,
+                Prerequisite: []
+            },
+            Targets: [
+                { TargetLabel: getMessage('actStealBra'), Name: "ItemBreast", SelfAllowed: false, TargetAction: getMessage('actStealBraDesc') },
+                { TargetLabel: getMessage('actStealBra'), Name: "ItemNipples", SelfAllowed: false, TargetAction: getMessage('actStealBraDesc') },
+                { TargetLabel: getMessage('actStealBra'), Name: "ItemTorso", SelfAllowed: false, TargetAction: getMessage('actStealBraDesc') }
+            ],
+            CustomPrereqs: [
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
+                { Name: "lsccHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBCItemPermission") },
+                { Name: "lsccHasBra", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBra") }
+            ],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    if (!InventoryGet(target, "Bra")) {
+                        chatSendCustomAction(getNickname(target) + " " + getMessage('noBra'));
+                        return;
+                    }
+                    if (stealBra(target)) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('stealBra') + " " + getNickname(target) + getMessage('stealBraSuffix'));
+                    } else {
+                        ChatRoomSendLocal(getMessage('stealFailed'), 5000);
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Bra/Preview/Bra1.png")
+        });
+
+        // 10. Steal Hat
+        AddActivity({
+            Activity: {
+                Name: "StealHat",
+                MaxProgress: 40,
+                MaxProgressSelf: 40,
+                Prerequisite: []
+            },
+            Targets: [
+                { TargetLabel: getMessage('actStealHat'), Name: "ItemHead", SelfAllowed: false, TargetAction: getMessage('actStealHatDesc') }
+            ],
+            CustomPrereqs: [
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
+                { Name: "lsccHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBCItemPermission") },
+                { Name: "lsccHasHat", Func: actData.CustomPrerequisiteFuncs.get("lsccHasHat") }
+            ],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    if (!InventoryGet(target, "Hat")) {
+                        chatSendCustomAction(getNickname(target) + " " + getMessage('noHat'));
+                        return;
+                    }
+                    if (stealHat(target)) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('stealHat') + " " + getNickname(target) + getMessage('stealHatSuffix'));
+                    } else {
+                        ChatRoomSendLocal(getMessage('stealFailed'), 5000);
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Hat/Preview/WinterHat1.png")
+        });
+
+        // 11. Dye Hair
+        AddActivity({
+            Activity: {
+                Name: "DyeHair",
+                MaxProgress: 50,
+                MaxProgressSelf: 50,
+                Prerequisite: []
+            },
+            Targets: [{
+                TargetLabel: getMessage('actDyeHair'),
+                Name: "ItemHead",
+                SelfAllowed: true,
+                TargetAction: getMessage('actDyeHairDesc'),
+                TargetSelfAction: getMessage('actDyeHairSelf')
+            }],
+            CustomPrereqs: [
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
+                { Name: "lsccHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBCItemPermission") }
+            ],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    dyeHair(target);
+                    const isSelf = target.MemberNumber === Player.MemberNumber;
+                    if (isSelf) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('dyeOwnHair'));
+                    } else {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('dyeHair') + " " + getNickname(target) + getMessage('dyeHairSuffix'));
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/ItemHandheld/Preview/PotionBottle.png")
+        });
+
+        // 12. Rainbow Dye
         actData.CustomPrerequisiteFuncs.set("lsccCanInteract", actData.CustomPrerequisiteFuncs.get("lsccCanInteract"));
         AddActivity({
             Activity: {
@@ -1144,7 +1354,8 @@
                 { Tag: "dissolve", Description: "Dissolve clothes", Action: (args) => spillObscenePotion(args) },
                 { Tag: "teleport", Description: "Teleport", Action: (args) => openPortal(args) },
                 { Tag: "give", Description: "Give held item to a player", Action: (args) => giveItem(args) },
-                { Tag: "streak", Description: "Strip all your own clothes off", Action: () => streak() }
+                { Tag: "streak", Description: "Strip all your own clothes off", Action: () => streak() },
+                { Tag: "swap", Description: "Swap outfits with a player", Action: (args) => swapOutfits(args) }
             ]);
         }
 
