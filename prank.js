@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         Liko - Prank
-// @namespace    https://likolisu.dev/
+// @name         lscc - Prank
+// @namespace    https://lscclisu.dev/
 // @version      1.5.1
-// @description  Likolisu's prank on her friends
-// @author       Likolisu
+// @description  lscc's prank on her friends
+// @author       lscc
 // @include      /^https:\/\/(www\.)?bondage(projects\.elementfx|-(europe|asia))\.com\/.*/
 // @icon         
 // @grant        none
@@ -14,11 +14,11 @@
 (function() {
     'use strict';
 
-    if (window.LIKO_PRANK_LOADED) {
-        console.log("liko's prank Plugin is already loaded");
+    if (window.LSCC_PRANK_LOADED) {
+        console.log("lscc's prank Plugin is already loaded");
         return;
     }
-    window.LIKO_PRANK_LOADED = true;
+    window.LSCC_PRANK_LOADED = true;
 
     let modApi;
     const modversion = "1.5.1";
@@ -52,7 +52,7 @@
 
     const messages = {
         en: {
-            loaded: `Liko's Prank Plugin v${modversion} Loaded!`,
+            loaded: `lscc's Prank Plugin v${modversion} Loaded!`,
             notFound: "Target not found",
             noPermission: "No permission",
             noUnderwear: "has no underwear",
@@ -121,10 +121,10 @@
     try {
         if (typeof bcModSdk === "object" && typeof bcModSdk.registerMod === "function") {
             modApi = bcModSdk.registerMod({
-                name: "liko's prank",
-                fullName: "Likolisu's prank on her friends",
+                name: "lscc's prank",
+                fullName: "lscc's prank on her friends",
                 version: modversion,
-                repository: "Liko's prank"
+                repository: "lscc's prank"
             });
             console.log("[prank] Mod registered with bcModSdk");
         }
@@ -404,7 +404,7 @@
         let activity = bundle.Activity;
         activity.Target = activity.Target ?? [];
         activity.Prerequisite = activity.Prerequisite ?? [];
-        activity.Name = "Liko_" + activity.Name;
+        activity.Name = "lscc_" + activity.Name;
 
         RegisterCustomFuncs(bundle, bundle.Activity);
         ActivityDictionary?.push(["Activity" + activity.Name, bundle.Targets[0].TargetLabel ?? activity.Name.substring(5)]);
@@ -599,36 +599,36 @@
     function registerActivities() {
         ImagePathHelper.clearCache();
 
-        actData.CustomPrerequisiteFuncs.set("LikoCanInteract", function(target1, target2, group) {
+        actData.CustomPrerequisiteFuncs.set("lsccCanInteract", function(target1, target2, group) {
             return target1.CanInteract();
         });
 
-        actData.CustomPrerequisiteFuncs.set("LikoHasBCItemPermission", function(target1, target2, group) {
+        actData.CustomPrerequisiteFuncs.set("lsccHasBCItemPermission", function(target1, target2, group) {
             return hasBCItemPermission(target2);
         });
 
-        actData.CustomPrerequisiteFuncs.set("LikoHoldingScissors", function(target1, target2, group) {
+        actData.CustomPrerequisiteFuncs.set("lsccHoldingScissors", function(target1, target2, group) {
             const handItem = InventoryGet(target1, "ItemHandheld");
             return handItem && handItem.Asset && handItem.Asset.Name === "Scissors";
         });
 
-        actData.CustomPrerequisiteFuncs.set("LikoHasClothing", function(target1, target2, group) {
+        actData.CustomPrerequisiteFuncs.set("lsccHasClothing", function(target1, target2, group) {
             return true;
         });
 
-        actData.CustomPrerequisiteFuncs.set("LikoTargetHasClothing", function(target1, target2, group) {
+        actData.CustomPrerequisiteFuncs.set("lsccTargetHasClothing", function(target1, target2, group) {
             return hasRemovableClothing(target2, group?.Name);
         });
 
-        actData.CustomPrerequisiteFuncs.set("LikoHasPanties", function(target1, target2, group) {
+        actData.CustomPrerequisiteFuncs.set("lsccHasPanties", function(target1, target2, group) {
             return !!InventoryGet(target2, "Panties");
         });
 
-        actData.CustomPrerequisiteFuncs.set("LikoHasSocks", function(target1, target2, group) {
+        actData.CustomPrerequisiteFuncs.set("lsccHasSocks", function(target1, target2, group) {
             return !!(InventoryGet(target2, "Socks") || InventoryGet(target2, "SocksRight") || InventoryGet(target2, "SocksLeft"));
         });
 
-        actData.CustomPrerequisiteFuncs.set("LikoHasAhoge", function(target1, target2, group) {
+        actData.CustomPrerequisiteFuncs.set("lsccHasAhoge", function(target1, target2, group) {
             return !!(InventoryGet(target2, "额外头发_Luzi"))
         });
 
@@ -655,10 +655,10 @@
                 TargetSelfAction: getMessage('actCutClothesSelf')
             })),
             CustomPrereqs: [
-                { Name: "LikoCanInteract", Func: actData.CustomPrerequisiteFuncs.get("LikoCanInteract") },
-                { Name: "LikoHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("LikoHasBCItemPermission") },
-                { Name: "LikoHoldingScissors", Func: actData.CustomPrerequisiteFuncs.get("LikoHoldingScissors") },
-                { Name: "LikoTargetHasClothing", Func: actData.CustomPrerequisiteFuncs.get("LikoTargetHasClothing") }
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
+                { Name: "lsccHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBCItemPermission") },
+                { Name: "lsccHoldingScissors", Func: actData.CustomPrerequisiteFuncs.get("lsccHoldingScissors") },
+                { Name: "lsccTargetHasClothing", Func: actData.CustomPrerequisiteFuncs.get("lsccTargetHasClothing") }
             ],
             CustomAction: {
                 Func: (target, args, next) => {
@@ -697,9 +697,9 @@
                 TargetSelfAction: getMessage('actRemoveClothesSelf')
             })),
             CustomPrereqs: [
-                { Name: "LikoCanInteract", Func: actData.CustomPrerequisiteFuncs.get("LikoCanInteract") },
-                { Name: "LikoHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("LikoHasBCItemPermission") },
-                { Name: "LikoTargetHasClothing", Func: actData.CustomPrerequisiteFuncs.get("LikoTargetHasClothing") }
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
+                { Name: "lsccHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBCItemPermission") },
+                { Name: "lsccTargetHasClothing", Func: actData.CustomPrerequisiteFuncs.get("lsccTargetHasClothing") }
             ],
             CustomAction: {
                 Func: (target, args, next) => {
@@ -738,8 +738,8 @@
                 TargetSelfAction: getMessage('actDissolveClothesSelf')
             }],
             CustomPrereqs: [
-                { Name: "LikoCanInteract", Func: actData.CustomPrerequisiteFuncs.get("LikoCanInteract") },
-                { Name: "LikoHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("LikoHasBCItemPermission") }
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
+                { Name: "lsccHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBCItemPermission") }
             ],
             CustomAction: {
                 Func: (target, args, next) => {
@@ -777,9 +777,9 @@
                 { TargetLabel: getMessage('actStealPanties'), Name: "ItemVulva", SelfAllowed: false, TargetAction: getMessage('actStealPantiesDesc') }
             ],
             CustomPrereqs: [
-                { Name: "LikoCanInteract", Func: actData.CustomPrerequisiteFuncs.get("LikoCanInteract") },
-                { Name: "LikoHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("LikoHasBCItemPermission") },
-                { Name: "LikoHasPanties", Func: actData.CustomPrerequisiteFuncs.get("LikoHasPanties") }
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
+                { Name: "lsccHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBCItemPermission") },
+                { Name: "lsccHasPanties", Func: actData.CustomPrerequisiteFuncs.get("lsccHasPanties") }
             ],
             CustomAction: {
                 Func: (target, args, next) => {
@@ -812,9 +812,9 @@
                 { TargetLabel: getMessage('actRemoveHoldPanties'), Name: "ItemVulva", SelfAllowed: true, TargetAction: getMessage('actRemoveHoldPantiesDesc'), TargetSelfAction: getMessage('actRemoveHoldPantiesSelf') }
             ],
             CustomPrereqs: [
-                { Name: "LikoCanInteract", Func: actData.CustomPrerequisiteFuncs.get("LikoCanInteract") },
-                { Name: "LikoHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("LikoHasBCItemPermission") },
-                { Name: "LikoHasPanties", Func: actData.CustomPrerequisiteFuncs.get("LikoHasPanties") }
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
+                { Name: "lsccHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBCItemPermission") },
+                { Name: "lsccHasPanties", Func: actData.CustomPrerequisiteFuncs.get("lsccHasPanties") }
             ],
             CustomAction: {
                 Func: (target, args, next) => {
@@ -852,9 +852,9 @@
                 { TargetLabel: getMessage('actStealSocks'), Name: "ItemBoots", SelfAllowed: false, TargetAction: getMessage('actStealSocksDesc') }
             ],
             CustomPrereqs: [
-                { Name: "LikoCanInteract", Func: actData.CustomPrerequisiteFuncs.get("LikoCanInteract") },
-                { Name: "LikoHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("LikoHasBCItemPermission") },
-                { Name: "LikoHasSocks", Func: actData.CustomPrerequisiteFuncs.get("LikoHasSocks") }
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
+                { Name: "lsccHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBCItemPermission") },
+                { Name: "lsccHasSocks", Func: actData.CustomPrerequisiteFuncs.get("lsccHasSocks") }
             ],
             CustomAction: {
                 Func: (target, args, next) => {
@@ -888,9 +888,9 @@
                 { TargetLabel: getMessage('actRemoveHoldSocks'), Name: "ItemBoots", SelfAllowed: true, TargetAction: getMessage('actRemoveHoldSocksDesc'), TargetSelfAction: getMessage('actRemoveHoldSocksSelf') }
             ],
             CustomPrereqs: [
-                { Name: "LikoCanInteract", Func: actData.CustomPrerequisiteFuncs.get("LikoCanInteract") },
-                { Name: "LikoHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("LikoHasBCItemPermission") },
-                { Name: "LikoHasSocks", Func: actData.CustomPrerequisiteFuncs.get("LikoHasSocks") }
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
+                { Name: "lsccHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBCItemPermission") },
+                { Name: "lsccHasSocks", Func: actData.CustomPrerequisiteFuncs.get("lsccHasSocks") }
             ],
             CustomAction: {
                 Func: (target, args, next) => {
@@ -927,9 +927,9 @@
                 { TargetLabel: getMessage('actPluckingHair'), Name: "ItemHead", SelfAllowed: true, TargetAction: getMessage('actPluckingHair'), TargetSelfAction: getMessage('actPluckingHair') },
             ],
             CustomPrereqs: [
-                { Name: "LikoCanInteract", Func: actData.CustomPrerequisiteFuncs.get("LikoCanInteract") },
-                { Name: "LikoHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("LikoHasBCItemPermission") },
-                { Name: "LikoHasAhoge", Func: actData.CustomPrerequisiteFuncs.get("LikoHasAhoge") }
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
+                { Name: "lsccHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBCItemPermission") },
+                { Name: "lsccHasAhoge", Func: actData.CustomPrerequisiteFuncs.get("lsccHasAhoge") }
             ],
             CustomAction: {
                 Func: (target, args, next) => {
@@ -979,7 +979,7 @@
             if (message === "ChatRoomChat" && params.Type === "Activity") {
                 const activityName = params.Dictionary?.find(d => d.ActivityName)?.ActivityName;
 
-                if (activityName && activityName.startsWith("Liko_")) {
+                if (activityName && activityName.startsWith("lscc_")) {
                     const targetMemberNumber = params.Dictionary?.find(d => d.TargetCharacter)?.TargetCharacter;
                     const target = ChatRoomCharacter.find(c => c.MemberNumber === targetMemberNumber);
 
@@ -996,7 +996,7 @@
 
         modApi.hookFunction("ElementButton.CreateForActivity", 4, (args, next) => {
             const activity = args[1];
-            if (activity?.Activity?.Name?.startsWith("Liko_")) {
+            if (activity?.Activity?.Name?.startsWith("lscc_")) {
                 args[4] = args[4] || {};
                 const customImage = actData.CustomImages.get(activity.Activity.Name);
                 if (customImage) {
@@ -1008,7 +1008,7 @@
 
         if (GameVersion !== "R121") {
             modApi.hookFunction("PreferenceGetActivityFactor", 4, (args, next) => {
-                if (typeof args[1] === "string" && args[1].indexOf("Liko_") === 0) {
+                if (typeof args[1] === "string" && args[1].indexOf("lscc_") === 0) {
                     return 2;
                 }
                 return next(args);
