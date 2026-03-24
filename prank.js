@@ -538,6 +538,7 @@
             "ItemButt": ["ClothLower", "SuitLower", "Panties"],
             "ItemVulvaPiercings": ["ClothLower", "SuitLower", "Panties"],
             "ItemVulva": ["ClothLower", "SuitLower", "Panties"],
+            "ItemPenis": ["ClothLower", "SuitLower", "Panties"],
             "ItemBoots": ["Shoes", "Socks", "SocksRight", "SocksLeft"],
             "ItemLegs": ["Socks", "SocksRight", "SocksLeft"],
             "ItemFeet": ["Socks", "SocksRight", "SocksLeft"],
@@ -573,6 +574,7 @@
             "ItemButt": ["ClothLower", "SuitLower", "Panties"],
             "ItemVulvaPiercings": ["ClothLower", "SuitLower", "Panties"],
             "ItemVulva": ["ClothLower", "SuitLower", "Panties"],
+            "ItemPenis": ["ClothLower", "SuitLower", "Panties"],
             "ItemBoots": ["Shoes", "Socks", "SocksRight", "SocksLeft"],
             "ItemLegs": ["Socks", "SocksRight", "SocksLeft"],
             "ItemFeet": ["Socks", "SocksRight", "SocksLeft"],
@@ -1388,6 +1390,7 @@
             "ItemNeck", "ItemNipples", "ItemBreast", "ItemTorso",
             "ItemNeckAccessories", "ItemNeckRestraints", "ItemNipplesPiercings", "ItemTorso2",
             "ItemHands", "ItemHandheld", "ItemPelvis", "ItemButt", "ItemVulvaPiercings", "ItemVulva",
+            "ItemPenis",
             "ItemBoots", "ItemLegs", "ItemFeet", "ItemMouth", "ItemMouth2", "ItemMouth3"
         ];
 
@@ -1526,7 +1529,8 @@
             Targets: [
                 { TargetLabel: getMessage('actStealPanties'), Name: "ItemButt", SelfAllowed: false, TargetAction: getMessage('actStealPantiesDesc') },
                 { TargetLabel: getMessage('actStealPanties'), Name: "ItemVulvaPiercings", SelfAllowed: false, TargetAction: getMessage('actStealPantiesDesc') },
-                { TargetLabel: getMessage('actStealPanties'), Name: "ItemVulva", SelfAllowed: false, TargetAction: getMessage('actStealPantiesDesc') }
+                { TargetLabel: getMessage('actStealPanties'), Name: "ItemVulva", SelfAllowed: false, TargetAction: getMessage('actStealPantiesDesc') },
+                { TargetLabel: getMessage('actStealPanties'), Name: "ItemPenis", SelfAllowed: false, TargetAction: getMessage('actStealPantiesDesc') }
             ],
             CustomPrereqs: [
                 { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
@@ -1561,7 +1565,8 @@
             Targets: [
                 { TargetLabel: getMessage('actRemoveHoldPanties'), Name: "ItemButt", SelfAllowed: true, TargetAction: getMessage('actRemoveHoldPantiesDesc'), TargetSelfAction: getMessage('actRemoveHoldPantiesSelf') },
                 { TargetLabel: getMessage('actRemoveHoldPanties'), Name: "ItemVulvaPiercings", SelfAllowed: true, TargetAction: getMessage('actRemoveHoldPantiesDesc'), TargetSelfAction: getMessage('actRemoveHoldPantiesSelf') },
-                { TargetLabel: getMessage('actRemoveHoldPanties'), Name: "ItemVulva", SelfAllowed: true, TargetAction: getMessage('actRemoveHoldPantiesDesc'), TargetSelfAction: getMessage('actRemoveHoldPantiesSelf') }
+                { TargetLabel: getMessage('actRemoveHoldPanties'), Name: "ItemVulva", SelfAllowed: true, TargetAction: getMessage('actRemoveHoldPantiesDesc'), TargetSelfAction: getMessage('actRemoveHoldPantiesSelf') },
+                { TargetLabel: getMessage('actRemoveHoldPanties'), Name: "ItemPenis", SelfAllowed: true, TargetAction: getMessage('actRemoveHoldPantiesDesc'), TargetSelfAction: getMessage('actRemoveHoldPantiesSelf') }
             ],
             CustomPrereqs: [
                 { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
@@ -2064,7 +2069,8 @@
             Activity: { Name: "Wedgie", MaxProgress: 40, MaxProgressSelf: 40, Prerequisite: [] },
             Targets: [
                 { TargetLabel: getMessage('actWedgie'), Name: "ItemButt", SelfAllowed: false, TargetAction: getMessage('actWedgieDesc') },
-                { TargetLabel: getMessage('actWedgie'), Name: "ItemPelvis", SelfAllowed: false, TargetAction: getMessage('actWedgieDesc') }
+                { TargetLabel: getMessage('actWedgie'), Name: "ItemPelvis", SelfAllowed: false, TargetAction: getMessage('actWedgieDesc') },
+                { TargetLabel: getMessage('actWedgie'), Name: "ItemPenis", SelfAllowed: false, TargetAction: getMessage('actWedgieDesc') }
             ],
             CustomPrereqs: [
                 { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
