@@ -125,6 +125,15 @@
             rouletteAnnounce: "spins the prank wheel...",
             prankRandom: "hits",
             prankRandomSuffix: "with a random prank!",
+            slowStripRemoves: "slowly peels off",
+            slowStripDone: "has been completely stripped... slowly 😈",
+            blackoutAction: "casts a shadow over",
+            blackoutSuffix: "'s entire wardrobe 🖤",
+            loopStarted: "Started prank loop on",
+            loopStopped: "Stopped prank loop on",
+            loopAllStopped: "Stopped all prank loops",
+            loopAlready: "Already looping on",
+            loopNone: "No active loop for that player",
 
             // Activity labels
             actCutClothes: "Cut Clothes",
@@ -739,6 +748,121 @@
         } catch (error) {
             console.error("Error in swapOutfits:", error);
         }
+    }
+
+    const prankLoops = new Map();
+
+    function silentStrip(args) {
+        try {
+            const target = getPlayer((args || "").trim());
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            if (!hasBCItemPermission(target)) return chatSendLocal(getMessage('noPermission'));
+
+            const noClothesFilter = (item) => !appearanceGroupNames.includes(item.Group);
+            const appearance = ServerAppearanceBundle(target.Appearance).filter(noClothesFilter);
+            ServerSend("ChatRoomCharacterUpdate", {
+                ID: target.ID === 0 ? target.OnlineID : target.AccountName.replace("Online-", ""),
+                ActivePose: target.ActivePose,
+                Appearance: appearance
+            });
+            // Intentionally no chat message
+        } catch (error) {
+            console.error("Error in silentStrip:", error);
+        }
+    }
+
+    function slowStrip(args) {
+        try {
+            const target = getPlayer((args || "").trim());
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            if (!hasBCItemPermission(target)) return chatSendLocal(getMessage('noPermission'));
+
+            const groups = ["Hat", "Gloves", "Shoes", "Socks", "SocksRight", "SocksLeft",
+                            "Bra", "ClothAccessory", "Cloth", "ClothLower", "Suit", "SuitLower",
+                            "Panties", "Corset", "ClothOuter", "Mask", "Necklace"];
+            let index = 0;
+
+            const interval = setInterval(() => {
+                // Skip groups with no item
+                while (index < groups.length && !InventoryGet(target, groups[index])) index++;
+
+                if (index >= groups.length) {
+                    clearInterval(interval);
+                    chatSendCustomAction(getNickname(target) + " " + getMessage('slowStripDone'));
+                    return;
+                }
+
+                const group = groups[index];
+                const item = InventoryGet(target, group);
+                if (item) {
+                    const itemName = item.Asset?.Description || group;
+                    InventoryRemove(target, group);
+                    ChatRoomCharacterUpdate(target);
+                    chatSendCustomAction(getNickname(Player) + " " + getMessage('slowStripRemoves') + " " + getNickname(target) + "'s " + itemName + "...");
+                }
+                index++;
+            }, 3000);
+        } catch (error) {
+            console.error("Error in slowStrip:", error);
+        }
+    }
+
+    function blackout(args) {
+        try {
+            const target = getPlayer((args || "").trim());
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            if (!hasBCItemPermission(target)) return chatSendLocal(getMessage('noPermission'));
+
+            const clothingGroups = [
+                "Cloth", "ClothLower", "Bra", "Panties", "Socks", "SocksRight", "SocksLeft",
+                "Shoes", "Gloves", "Hat", "Suit", "SuitLower", "Corset", "ClothOuter",
+                "ClothAccessory", "Necklace", "Mask", "Garters", "Bracelet", "Jewelry"
+            ];
+            const bundle = ServerAppearanceBundle(target.Appearance).map(item => {
+                if (clothingGroups.includes(item.Group)) {
+                    item.Color = Array.isArray(item.Color)
+                        ? item.Color.map(() => "#000000")
+                        : "#000000";
+                }
+                return item;
+            });
+            ServerSend("ChatRoomCharacterUpdate", {
+                ID: target.ID === 0 ? target.OnlineID : target.AccountName.replace("Online-", ""),
+                ActivePose: target.ActivePose,
+                Appearance: bundle
+            });
+            chatSendCustomAction(getNickname(Player) + " " + getMessage('blackoutAction') + " " + getNickname(target) + getMessage('blackoutSuffix'));
+        } catch (error) {
+            console.error("Error in blackout:", error);
+        }
+    }
+
+    function startLoop(args) {
+        try {
+            const target = getPlayer((args || "").trim());
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            if (prankLoops.has(target.MemberNumber)) return chatSendLocal(getMessage('loopAlready') + " " + getNickname(target));
+
+            const id = setInterval(() => applyRandomPrank(target), 30000);
+            prankLoops.set(target.MemberNumber, id);
+            chatSendLocal(getMessage('loopStarted') + " " + getNickname(target));
+        } catch (error) {
+            console.error("Error in startLoop:", error);
+        }
+    }
+
+    function stopLoop(args) {
+        const targetArg = (args || "").trim();
+        if (!targetArg) {
+            prankLoops.forEach(id => clearInterval(id));
+            prankLoops.clear();
+            return chatSendLocal(getMessage('loopAllStopped'));
+        }
+        const target = getPlayer(targetArg);
+        if (!target || !prankLoops.has(target.MemberNumber)) return chatSendLocal(getMessage('loopNone'));
+        clearInterval(prankLoops.get(target.MemberNumber));
+        prankLoops.delete(target.MemberNumber);
+        chatSendLocal(getMessage('loopStopped') + " " + getNickname(target));
     }
 
     function stealGloves(target) {
@@ -1676,7 +1800,12 @@
                 { Tag: "swap", Description: "Swap outfits with a player", Action: (args) => swapOutfits(args) },
                 { Tag: "copy", Description: "Copy a player's outfit", Action: (args) => copyOutfit(args) },
                 { Tag: "prank", Description: "Apply a random prank to a player", Action: (args) => applyRandomPrank(getPlayer((args || "").trim())) },
-                { Tag: "roulette", Description: "Random prank on a random person in the room", Action: () => prankRoulette() }
+                { Tag: "roulette", Description: "Random prank on a random person in the room", Action: () => prankRoulette() },
+                { Tag: "silentstrip", Description: "Strip a player's clothes silently", Action: (args) => silentStrip(args) },
+                { Tag: "slowstrip", Description: "Gradually strip a player one item at a time", Action: (args) => slowStrip(args) },
+                { Tag: "blackout", Description: "Turn all of a player's clothing black", Action: (args) => blackout(args) },
+                { Tag: "loop", Description: "Keep pranking a player every 30s", Action: (args) => startLoop(args) },
+                { Tag: "stoploop", Description: "Stop prank loop (omit name to stop all)", Action: (args) => stopLoop(args) }
             ]);
         }
 
