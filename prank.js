@@ -116,6 +116,15 @@
             resetColors: "restores",
             resetColorsSuffix: "'s clothing back to normal",
             resetOwnColors: "restores their own clothing back to normal",
+            noGloves: "has no gloves",
+            stealGloves: "slips off",
+            stealGlovesSuffix: "'s gloves! 🧤",
+            headpat: "gives",
+            headpatSuffix: "a gentle headpat 🐾",
+            headpatSelf: "pats their own head 🐾",
+            rouletteAnnounce: "spins the prank wheel...",
+            prankRandom: "hits",
+            prankRandomSuffix: "with a random prank!",
 
             // Activity labels
             actCutClothes: "Cut Clothes",
@@ -157,7 +166,12 @@
             actStealShoesDesc: "SourceCharacter yanks off TargetCharacter's shoes",
             actResetColors: "Restore Colors",
             actResetColorsDesc: "SourceCharacter restores TargetCharacter's clothing colors back to normal",
-            actResetColorsSelf: "SourceCharacter restores their own clothing colors back to normal"
+            actResetColorsSelf: "SourceCharacter restores their own clothing colors back to normal",
+            actStealGloves: "Steal Gloves",
+            actStealGlovesDesc: "SourceCharacter slips off TargetCharacter's gloves",
+            actHeadpat: "Headpat",
+            actHeadpatDesc: "SourceCharacter gives TargetCharacter a gentle headpat",
+            actHeadpatSelf: "SourceCharacter pats their own head"
         }
     };
 
@@ -727,6 +741,75 @@
         }
     }
 
+    function stealGloves(target) {
+        const glove = InventoryGet(target, "Gloves");
+        if (!glove) return false;
+        InventoryRemove(target, "Gloves");
+        ChatRoomCharacterUpdate(target);
+        return true;
+    }
+
+    function applyRandomPrank(target) {
+        if (!hasBCItemPermission(target)) return chatSendLocal(getMessage('noPermission'));
+
+        const targetNick = getNickname(target);
+        const pranks = [
+            () => {
+                dyeClothes(target);
+                chatSendCustomAction(getNickname(Player) + " " + getMessage('dyeClothes') + " " + targetNick + getMessage('dyeClothesTarget'));
+            },
+            () => {
+                dyeHair(target);
+                chatSendCustomAction(getNickname(Player) + " " + getMessage('dyeHair') + " " + targetNick + getMessage('dyeHairSuffix'));
+            },
+            () => {
+                const noClothesFilter = (item) => !appearanceGroupNames.includes(item.Group);
+                const appearance = ServerAppearanceBundle(target.Appearance).filter(noClothesFilter);
+                ServerSend("ChatRoomCharacterUpdate", {
+                    ID: target.ID === 0 ? target.OnlineID : target.AccountName.replace("Online-", ""),
+                    ActivePose: target.ActivePose,
+                    Appearance: appearance
+                });
+                chatSendCustomAction(getNickname(Player) + " " + getMessage('dissolveClothes') + " " + targetNick + getMessage('dissolveClothesTarget'));
+            },
+            () => {
+                chatSendCustomAction(getNickname(Player) + " " + getMessage('tickle') + " " + targetNick + getMessage('tickleSuffix'));
+            },
+            () => {
+                if (InventoryGet(target, "Panties")) {
+                    stealItem(target, "panties");
+                    chatSendCustomAction(getNickname(Player) + " " + getMessage('stoleUnderwear') + " " + targetNick + getMessage('stealUnderwearSuffix'));
+                } else {
+                    dyeClothes(target);
+                    chatSendCustomAction(getNickname(Player) + " " + getMessage('dyeClothes') + " " + targetNick + getMessage('dyeClothesTarget'));
+                }
+            },
+            () => {
+                if (InventoryGet(target, "Hat")) {
+                    stealHat(target);
+                    chatSendCustomAction(getNickname(Player) + " " + getMessage('stealHat') + " " + targetNick + getMessage('stealHatSuffix'));
+                } else {
+                    dyeHair(target);
+                    chatSendCustomAction(getNickname(Player) + " " + getMessage('dyeHair') + " " + targetNick + getMessage('dyeHairSuffix'));
+                }
+            }
+        ];
+
+        chatSendCustomAction(getNickname(Player) + " " + getMessage('prankRandom') + " " + targetNick + " " + getMessage('prankRandomSuffix'));
+        setTimeout(() => {
+            pranks[Math.floor(Math.random() * pranks.length)]();
+        }, 1500);
+    }
+
+    function prankRoulette() {
+        const others = ChatRoomCharacter ? ChatRoomCharacter.filter(c => c.MemberNumber !== Player.MemberNumber) : [];
+        if (others.length === 0) return chatSendLocal("No one else in the room!");
+
+        const victim = others[Math.floor(Math.random() * others.length)];
+        chatSendCustomAction(getNickname(Player) + " " + getMessage('rouletteAnnounce'));
+        setTimeout(() => applyRandomPrank(victim), 1500);
+    }
+
     function stealShoes(target) {
         const shoe = InventoryGet(target, "Shoes");
         if (!shoe) return false;
@@ -897,6 +980,10 @@
 
         actData.CustomPrerequisiteFuncs.set("lsccHasShoes", function(target1, target2, group) {
             return !!InventoryGet(target2, "Shoes");
+        });
+
+        actData.CustomPrerequisiteFuncs.set("lsccHasGloves", function(target1, target2, group) {
+            return !!InventoryGet(target2, "Gloves");
         });
 
         const clothingTargets = [
@@ -1354,7 +1441,71 @@
             CustomImage: ImagePathHelper.getAssetURL("Female3DCG/ItemHandheld/Preview/PotionBottle.png")
         });
 
-        // 13. Tickle
+        // 13. Steal Gloves
+        AddActivity({
+            Activity: {
+                Name: "StealGloves",
+                MaxProgress: 40,
+                MaxProgressSelf: 40,
+                Prerequisite: []
+            },
+            Targets: [
+                { TargetLabel: getMessage('actStealGloves'), Name: "ItemHands", SelfAllowed: false, TargetAction: getMessage('actStealGlovesDesc') },
+                { TargetLabel: getMessage('actStealGloves'), Name: "ItemHandheld", SelfAllowed: false, TargetAction: getMessage('actStealGlovesDesc') }
+            ],
+            CustomPrereqs: [
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
+                { Name: "lsccHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBCItemPermission") },
+                { Name: "lsccHasGloves", Func: actData.CustomPrerequisiteFuncs.get("lsccHasGloves") }
+            ],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    if (!InventoryGet(target, "Gloves")) {
+                        chatSendCustomAction(getNickname(target) + " " + getMessage('noGloves'));
+                        return;
+                    }
+                    if (stealGloves(target)) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('stealGloves') + " " + getNickname(target) + getMessage('stealGlovesSuffix'));
+                    } else {
+                        ChatRoomSendLocal(getMessage('stealFailed'), 5000);
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Gloves/Preview/Gloves1.png")
+        });
+
+        // 14. Headpat
+        AddActivity({
+            Activity: {
+                Name: "Headpat",
+                MaxProgress: 20,
+                MaxProgressSelf: 20,
+                Prerequisite: []
+            },
+            Targets: [{
+                TargetLabel: getMessage('actHeadpat'),
+                Name: "ItemHead",
+                SelfAllowed: true,
+                TargetAction: getMessage('actHeadpatDesc'),
+                TargetSelfAction: getMessage('actHeadpatSelf')
+            }],
+            CustomPrereqs: [
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") }
+            ],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    const isSelf = target.MemberNumber === Player.MemberNumber;
+                    if (isSelf) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('headpatSelf'));
+                    } else {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('headpat') + " " + getNickname(target) + " " + getMessage('headpatSuffix'));
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
+        });
+
+        // 15. Tickle
         AddActivity({
             Activity: {
                 Name: "Tickle",
@@ -1523,7 +1674,9 @@
                 { Tag: "give", Description: "Give held item to a player", Action: (args) => giveItem(args) },
                 { Tag: "streak", Description: "Strip all your own clothes off", Action: () => streak() },
                 { Tag: "swap", Description: "Swap outfits with a player", Action: (args) => swapOutfits(args) },
-                { Tag: "copy", Description: "Copy a player's outfit", Action: (args) => copyOutfit(args) }
+                { Tag: "copy", Description: "Copy a player's outfit", Action: (args) => copyOutfit(args) },
+                { Tag: "prank", Description: "Apply a random prank to a player", Action: (args) => applyRandomPrank(getPlayer((args || "").trim())) },
+                { Tag: "roulette", Description: "Random prank on a random person in the room", Action: () => prankRoulette() }
             ]);
         }
 
