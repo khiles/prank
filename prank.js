@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         lscc - Prank
-// @namespace    https://lscclisu.dev/
+// @name         lscc - Mischief and Fun
+// @namespace    
 // @version      1.6.0
 // @description  lscc's prank on her friends
-// @author       lscc
+// @author       Lucifer's Sidechick
 // @include      /^https:\/\/(www\.)?bondage(projects\.elementfx|-(europe|asia))\.com\/.*/
 // @icon         
 // @grant        none
