@@ -1952,11 +1952,10 @@
     }
 
     // ===== Initialization =====
-    waitFor(() => typeof Player !== "undefined" && typeof Player.MemberNumber === "number")
+    waitFor(() => typeof Player !== "undefined" && typeof Player.MemberNumber === "number" && typeof CommandCombine === "function")
         .then(() => {
         // Register commands
-        if (typeof CommandCombine === "function") {
-            CommandCombine([
+        CommandCombine([
                 { Tag: "steal", Description: "Steal panties", Action: (args) => stealPanties(args) },
                 { Tag: "dissolve", Description: "Dissolve clothes", Action: (args) => spillObscenePotion(args) },
                 { Tag: "teleport", Description: "Teleport", Action: (args) => openPortal(args) },
@@ -1975,7 +1974,6 @@
                 { Tag: "adopt", Description: "Adopt a player as your child", Action: (args) => adopt(args) },
                 { Tag: "flash", Description: "Flash a player", Action: (args) => flash(args) }
             ]);
-        }
 
         // Wait for activity system
         waitFor(() => typeof ActivityFemale3DCG !== "undefined" && typeof ActivityDictionary !== "undefined")
