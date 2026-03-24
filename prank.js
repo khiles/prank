@@ -1128,7 +1128,7 @@
             const appearance = ServerAppearanceBundle(Player.Appearance).filter(noClothesFilter);
 
             ServerSend("ChatRoomCharacterUpdate", {
-                ID: Player.ID === 0 ? Player.OnlineID : Player.AccountName.replace("Online-", ""),
+                ID: Player.AccountName.replace("Online-", ""),
                 ActivePose: Player.ActivePose,
                 Appearance: appearance
             });
