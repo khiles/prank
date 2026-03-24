@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         lscc - Prank
 // @namespace    https://lscclisu.dev/
-// @version      1.5.1
+// @version      1.6.0
 // @description  lscc's prank on her friends
 // @author       lscc
 // @include      /^https:\/\/(www\.)?bondage(projects\.elementfx|-(europe|asia))\.com\/.*/
@@ -21,7 +21,7 @@
     window.LSCC_PRANK_LOADED = true;
 
     let modApi;
-    const modversion = "1.5.1";
+    const modversion = "1.6.0";
 
     // ===== Image path helper tool =====
     const ImagePathHelper = {
@@ -409,6 +409,7 @@
                 return chatSendLocal(getMessage('noPermission'));
             }
 
+            takeSnapshot(target);
             const noClothesFilter = (item) => !appearanceGroupNames.includes(item.Group);
             const appearance = ServerAppearanceBundle(target.Appearance).filter(noClothesFilter);
 
@@ -702,6 +703,7 @@
     function stealBra(target) {
         const bra = InventoryGet(target, "Bra");
         if (!bra) return false;
+        takeSnapshot(target);
         InventoryRemove(target, "Bra");
         ChatRoomCharacterUpdate(target);
         return true;
@@ -710,6 +712,7 @@
     function stealHat(target) {
         const hat = InventoryGet(target, "Hat");
         if (!hat) return false;
+        takeSnapshot(target);
         const assetName = hat.Asset?.Name;
         const color = hat.Color || "Default";
         InventoryRemove(target, "Hat");
@@ -887,6 +890,16 @@
     }
 
     const prankLoops = new Map();
+    const outfitSnapshots = new Map(); // MemberNumber -> appearance bundle
+    const mimicTargets = new Map();    // target MemberNumber -> intervalId
+
+    function takeSnapshot(target) {
+        try {
+            outfitSnapshots.set(target.MemberNumber, JSON.parse(JSON.stringify(ServerAppearanceBundle(target.Appearance))));
+        } catch (e) {
+            console.error("[prank] snapshot failed:", e);
+        }
+    }
 
     function silentStrip(args) {
         try {
@@ -894,6 +907,7 @@
             if (!target) return chatSendLocal(getMessage('notFound'));
             if (!hasBCItemPermission(target)) return chatSendLocal(getMessage('noPermission'));
 
+            takeSnapshot(target);
             const noClothesFilter = (item) => !appearanceGroupNames.includes(item.Group);
             const appearance = ServerAppearanceBundle(target.Appearance).filter(noClothesFilter);
             ServerSend("ChatRoomCharacterUpdate", {
@@ -913,6 +927,7 @@
             if (!target) return chatSendLocal(getMessage('notFound'));
             if (!hasBCItemPermission(target)) return chatSendLocal(getMessage('noPermission'));
 
+            takeSnapshot(target);
             const groups = ["Hat", "Gloves", "Shoes", "Socks", "SocksRight", "SocksLeft",
                             "Bra", "ClothAccessory", "Cloth", "ClothLower", "Suit", "SuitLower",
                             "Panties", "Corset", "ClothOuter", "Mask", "Necklace"];
@@ -949,6 +964,7 @@
             if (!target) return chatSendLocal(getMessage('notFound'));
             if (!hasBCItemPermission(target)) return chatSendLocal(getMessage('noPermission'));
 
+            takeSnapshot(target);
             const clothingGroups = [
                 "Cloth", "ClothLower", "Bra", "Panties", "Socks", "SocksRight", "SocksLeft",
                 "Shoes", "Gloves", "Hat", "Suit", "SuitLower", "Corset", "ClothOuter",
@@ -1004,6 +1020,7 @@
     function stealGloves(target) {
         const glove = InventoryGet(target, "Gloves");
         if (!glove) return false;
+        takeSnapshot(target);
         InventoryRemove(target, "Gloves");
         ChatRoomCharacterUpdate(target);
         return true;
@@ -1073,6 +1090,7 @@
     function stealShoes(target) {
         const shoe = InventoryGet(target, "Shoes");
         if (!shoe) return false;
+        takeSnapshot(target);
         InventoryRemove(target, "Shoes");
         ChatRoomCharacterUpdate(target);
         return true;
@@ -1120,6 +1138,7 @@
     }
 
     function dyeClothes(target) {
+        takeSnapshot(target);
         const clothingGroups = [
             "Cloth", "ClothLower", "Bra", "Panties", "Socks", "SocksRight", "SocksLeft",
             "Shoes", "Gloves", "Hat", "Suit", "SuitLower", "Corset", "ClothOuter",
@@ -1191,6 +1210,125 @@
         } catch (error) {
             console.error("Error in streak:", error);
         }
+    }
+
+    // ===== QoL Commands =====
+    const COMMANDS_HELP = [
+        { tag: "steal",      desc: "Steal panties from a player" },
+        { tag: "dissolve",   desc: "Splash potion to dissolve all of a player's clothes" },
+        { tag: "teleport",   desc: "Open a portal and teleport to another room" },
+        { tag: "give",       desc: "Give your held item to a player" },
+        { tag: "streak",     desc: "Strip all your own clothes off" },
+        { tag: "swap",       desc: "Swap outfits with a player" },
+        { tag: "copy",       desc: "Copy a player's outfit" },
+        { tag: "stealhat",   desc: "Steal a player's hat and wear it" },
+        { tag: "stealbra",   desc: "Steal a player's bra" },
+        { tag: "stealgloves",desc: "Steal a player's gloves" },
+        { tag: "stealshoes", desc: "Steal a player's shoes" },
+        { tag: "prank",      desc: "Apply a random prank to a player" },
+        { tag: "roulette",   desc: "Random prank on a random person in the room" },
+        { tag: "silentstrip",desc: "Strip a player silently (no chat message)" },
+        { tag: "slowstrip",  desc: "Gradually strip a player one item at a time" },
+        { tag: "blackout",   desc: "Turn all of a player's clothing black" },
+        { tag: "loop",       desc: "Repeatedly prank a player every 30s" },
+        { tag: "stoploop",   desc: "Stop prank loop (omit name to stop all)" },
+        { tag: "propose",    desc: "Propose to a player" },
+        { tag: "adopt",      desc: "Adopt a player as your child" },
+        { tag: "flash",      desc: "Flash a player" },
+        { tag: "undo",       desc: "Restore a player's last outfit snapshot" },
+        { tag: "pranks",     desc: "Show players with active prank loops" },
+        { tag: "mimic",      desc: "Start mirroring a player's outfit" },
+        { tag: "stopmimic",  desc: "Stop mirroring (omit name to stop all)" },
+        { tag: "list",       desc: "Show all prank commands" },
+    ];
+
+    function listCommands() {
+        const lines = ["=== Prank Commands ==="].concat(
+            COMMANDS_HELP.map(c => `  /${c.tag} — ${c.desc}`)
+        );
+        lines.forEach(line => chatSendLocal(line));
+    }
+
+    function showPranks() {
+        if (prankLoops.size === 0) return chatSendLocal("No active prank loops.");
+        const lines = ["Active prank loops:"];
+        prankLoops.forEach((_, memberNumber) => {
+            const c = ChatRoomCharacter ? ChatRoomCharacter.find(x => x.MemberNumber === memberNumber) : null;
+            lines.push("  " + (c ? getNickname(c) : "MemberNumber " + memberNumber));
+        });
+        lines.forEach(line => chatSendLocal(line));
+    }
+
+    function undoOutfit(args) {
+        try {
+            const targetArg = (args || "").trim();
+            const target = targetArg ? getPlayer(targetArg) : Player;
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            if (target.MemberNumber !== Player.MemberNumber && !hasBCItemPermission(target)) {
+                return chatSendLocal(getMessage('noPermission'));
+            }
+            const snapshot = outfitSnapshots.get(target.MemberNumber);
+            if (!snapshot) return chatSendLocal("No snapshot for " + getNickname(target));
+            ServerSend("ChatRoomCharacterUpdate", {
+                ID: target.MemberNumber === Player.MemberNumber
+                    ? Player.AccountName.replace("Online-", "")
+                    : (target.ID === 0 ? target.OnlineID : target.AccountName.replace("Online-", "")),
+                ActivePose: target.ActivePose,
+                Appearance: snapshot
+            });
+            outfitSnapshots.delete(target.MemberNumber);
+            chatSendLocal("Restored outfit for " + getNickname(target));
+        } catch (error) {
+            console.error("Error in undoOutfit:", error);
+        }
+    }
+
+    function startMimic(args) {
+        try {
+            const targetArg = (args || "").trim();
+            if (!targetArg) return chatSendLocal("Usage: /mimic <player name or number>");
+            const target = getPlayer(targetArg);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            if (target.MemberNumber === Player.MemberNumber) return chatSendLocal("You can't mimic yourself");
+            if (mimicTargets.has(target.MemberNumber)) return chatSendLocal("Already mimicking " + getNickname(target));
+
+            const clothingGroups = [
+                "Cloth", "ClothLower", "Bra", "Panties", "Socks", "SocksRight", "SocksLeft",
+                "Shoes", "Gloves", "Hat", "Suit", "SuitLower", "Corset", "ClothOuter", "ClothAccessory"
+            ];
+
+            const id = setInterval(() => {
+                const fresh = ChatRoomCharacter ? ChatRoomCharacter.find(c => c.MemberNumber === target.MemberNumber) : null;
+                if (!fresh) return;
+                const selfOther   = ServerAppearanceBundle(Player.Appearance).filter(i => !clothingGroups.includes(i.Group));
+                const targetCloth = ServerAppearanceBundle(fresh.Appearance).filter(i => clothingGroups.includes(i.Group));
+                ServerSend("ChatRoomCharacterUpdate", {
+                    ID: Player.AccountName.replace("Online-", ""),
+                    ActivePose: fresh.ActivePose || Player.ActivePose,
+                    Appearance: [...selfOther, ...targetCloth]
+                });
+            }, 3000);
+
+            mimicTargets.set(target.MemberNumber, id);
+            chatSendLocal("Now mimicking " + getNickname(target));
+            chatSendCustomAction(getNickname(Player) + " starts copying " + getNickname(target) + "'s every move... 🪞");
+        } catch (error) {
+            console.error("Error in startMimic:", error);
+        }
+    }
+
+    function stopMimic(args) {
+        const targetArg = (args || "").trim();
+        if (!targetArg) {
+            mimicTargets.forEach(id => clearInterval(id));
+            mimicTargets.clear();
+            return chatSendLocal("Stopped all mimic loops.");
+        }
+        const target = getPlayer(targetArg);
+        if (!target || !mimicTargets.has(target.MemberNumber)) return chatSendLocal("Not mimicking that player.");
+        clearInterval(mimicTargets.get(target.MemberNumber));
+        mimicTargets.delete(target.MemberNumber);
+        chatSendLocal("Stopped mimicking " + getNickname(target));
     }
 
     // ===== Register Activities =====
@@ -2048,7 +2186,12 @@
                 { Tag: "stoploop", Description: "Stop prank loop (omit name to stop all)", Action: (args) => stopLoop(args) },
                 { Tag: "propose", Description: "Propose to a player", Action: (args) => propose(args) },
                 { Tag: "adopt", Description: "Adopt a player as your child", Action: (args) => adopt(args) },
-                { Tag: "flash", Description: "Flash a player", Action: (args) => flash(args) }
+                { Tag: "flash", Description: "Flash a player", Action: (args) => flash(args) },
+                { Tag: "undo", Description: "Restore a player's last outfit snapshot", Action: (args) => undoOutfit(args) },
+                { Tag: "pranks", Description: "Show players with active prank loops", Action: () => showPranks() },
+                { Tag: "mimic", Description: "Mirror a player's outfit every 3s", Action: (args) => startMimic(args) },
+                { Tag: "stopmimic", Description: "Stop mirroring (omit name to stop all)", Action: (args) => stopMimic(args) },
+                { Tag: "list", Description: "Show all prank commands", Action: () => listCommands() }
             ]);
 
         // Wait for activity system
