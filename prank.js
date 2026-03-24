@@ -134,6 +134,22 @@
             loopAllStopped: "Stopped all prank loops",
             loopAlready: "Already looping on",
             loopNone: "No active loop for that player",
+            boop: "boops",
+            boopSuffix: "'s nose 👉",
+            boopSelf: "boops their own nose 👉",
+            bonk: "bonks",
+            bonkSuffix: "on the head with a rolled-up newspaper 📰",
+            bonkSelf: "bonks themselves on the head 📰",
+            serenade: "serenades",
+            serenadeSuffix: "with a passionately off-key love song 🎵",
+            serenadeSelf: "serenades themselves... it's giving main character energy 🎵",
+            noogie: "grabs",
+            noogieSuffix: "and gives them a noogie 👊",
+            noogieSelf: "somehow gives themselves a noogie 👊",
+            proposeAction: "gets down on one knee and proposes to",
+            proposeSuffix: "💍 ...will they say yes?",
+            adoptAction: "officially adopts",
+            adoptSuffix: "as their child 👨‍👧",
 
             // Activity labels
             actCutClothes: "Cut Clothes",
@@ -180,7 +196,19 @@
             actStealGlovesDesc: "SourceCharacter slips off TargetCharacter's gloves",
             actHeadpat: "Headpat",
             actHeadpatDesc: "SourceCharacter gives TargetCharacter a gentle headpat",
-            actHeadpatSelf: "SourceCharacter pats their own head"
+            actHeadpatSelf: "SourceCharacter pats their own head",
+            actBoop: "Boop",
+            actBoopDesc: "SourceCharacter boops TargetCharacter's nose",
+            actBoopSelf: "SourceCharacter boops their own nose",
+            actBonk: "Bonk",
+            actBonkDesc: "SourceCharacter bonks TargetCharacter on the head with a rolled-up newspaper",
+            actBonkSelf: "SourceCharacter bonks themselves on the head",
+            actSerenade: "Serenade",
+            actSerenadeDesc: "SourceCharacter serenades TargetCharacter with a passionately off-key love song",
+            actSerenadeSelf: "SourceCharacter serenades themselves",
+            actNoogie: "Noogie",
+            actNoogieDesc: "SourceCharacter grabs TargetCharacter and gives them a noogie",
+            actNoogieSelf: "SourceCharacter somehow gives themselves a noogie"
         }
     };
 
@@ -747,6 +775,26 @@
             chatSendCustomAction(getNickname(Player) + " " + getMessage('swapOutfits') + " " + getNickname(target) + " " + getMessage('swapOutfitsSuffix'));
         } catch (error) {
             console.error("Error in swapOutfits:", error);
+        }
+    }
+
+    function propose(args) {
+        try {
+            const target = getPlayer((args || "").trim());
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            chatSendCustomAction(getNickname(Player) + " " + getMessage('proposeAction') + " " + getNickname(target) + " " + getMessage('proposeSuffix'));
+        } catch (error) {
+            console.error("Error in propose:", error);
+        }
+    }
+
+    function adopt(args) {
+        try {
+            const target = getPlayer((args || "").trim());
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            chatSendCustomAction(getNickname(Player) + " " + getMessage('adoptAction') + " " + getNickname(target) + " " + getMessage('adoptSuffix'));
+        } catch (error) {
+            console.error("Error in adopt:", error);
         }
     }
 
@@ -1723,6 +1771,88 @@
             },
             CustomImage: ImagePathHelper.getAssetURL("Female3DCG/ItemHandheld/Preview/PotionBottle.png")
         });
+
+        // 16. Boop
+        AddActivity({
+            Activity: { Name: "Boop", MaxProgress: 20, MaxProgressSelf: 20, Prerequisite: [] },
+            Targets: [
+                { TargetLabel: getMessage('actBoop'), Name: "ItemMouth", SelfAllowed: true, TargetAction: getMessage('actBoopDesc'), TargetSelfAction: getMessage('actBoopSelf') },
+                { TargetLabel: getMessage('actBoop'), Name: "ItemNose", SelfAllowed: true, TargetAction: getMessage('actBoopDesc'), TargetSelfAction: getMessage('actBoopSelf') }
+            ],
+            CustomPrereqs: [{ Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") }],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    const isSelf = target.MemberNumber === Player.MemberNumber;
+                    if (isSelf) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('boopSelf'));
+                    } else {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('boop') + " " + getNickname(target) + getMessage('boopSuffix'));
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
+        });
+
+        // 17. Bonk
+        AddActivity({
+            Activity: { Name: "Bonk", MaxProgress: 30, MaxProgressSelf: 30, Prerequisite: [] },
+            Targets: [
+                { TargetLabel: getMessage('actBonk'), Name: "ItemHead", SelfAllowed: true, TargetAction: getMessage('actBonkDesc'), TargetSelfAction: getMessage('actBonkSelf') }
+            ],
+            CustomPrereqs: [{ Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") }],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    const isSelf = target.MemberNumber === Player.MemberNumber;
+                    if (isSelf) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('bonkSelf'));
+                    } else {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('bonk') + " " + getNickname(target) + " " + getMessage('bonkSuffix'));
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
+        });
+
+        // 18. Serenade
+        AddActivity({
+            Activity: { Name: "Serenade", MaxProgress: 40, MaxProgressSelf: 40, Prerequisite: [] },
+            Targets: [
+                { TargetLabel: getMessage('actSerenade'), Name: "ItemEars", SelfAllowed: true, TargetAction: getMessage('actSerenadeDesc'), TargetSelfAction: getMessage('actSerenadeSelf') },
+                { TargetLabel: getMessage('actSerenade'), Name: "ItemMouth", SelfAllowed: true, TargetAction: getMessage('actSerenadeDesc'), TargetSelfAction: getMessage('actSerenadeSelf') }
+            ],
+            CustomPrereqs: [{ Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") }],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    const isSelf = target.MemberNumber === Player.MemberNumber;
+                    if (isSelf) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('serenadeSelf'));
+                    } else {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('serenade') + " " + getNickname(target) + " " + getMessage('serenadeSuffix'));
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
+        });
+
+        // 19. Noogie
+        AddActivity({
+            Activity: { Name: "Noogie", MaxProgress: 30, MaxProgressSelf: 30, Prerequisite: [] },
+            Targets: [
+                { TargetLabel: getMessage('actNoogie'), Name: "ItemHead", SelfAllowed: true, TargetAction: getMessage('actNoogieDesc'), TargetSelfAction: getMessage('actNoogieSelf') }
+            ],
+            CustomPrereqs: [{ Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") }],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    const isSelf = target.MemberNumber === Player.MemberNumber;
+                    if (isSelf) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('noogieSelf'));
+                    } else {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('noogie') + " " + getNickname(target) + " " + getMessage('noogieSuffix'));
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
+        });
     }
 
     // ===== Hook System =====
@@ -1805,7 +1935,9 @@
                 { Tag: "slowstrip", Description: "Gradually strip a player one item at a time", Action: (args) => slowStrip(args) },
                 { Tag: "blackout", Description: "Turn all of a player's clothing black", Action: (args) => blackout(args) },
                 { Tag: "loop", Description: "Keep pranking a player every 30s", Action: (args) => startLoop(args) },
-                { Tag: "stoploop", Description: "Stop prank loop (omit name to stop all)", Action: (args) => stopLoop(args) }
+                { Tag: "stoploop", Description: "Stop prank loop (omit name to stop all)", Action: (args) => stopLoop(args) },
+                { Tag: "propose", Description: "Propose to a player", Action: (args) => propose(args) },
+                { Tag: "adopt", Description: "Adopt a player as your child", Action: (args) => adopt(args) }
             ]);
         }
 
