@@ -1,10 +1,8 @@
 // ==UserScript==
 // @name         Liko - Prank
-// @name:zh      Liko对朋友的恶作剧
 // @namespace    https://likolisu.dev/
 // @version      1.5.1
 // @description  Likolisu's prank on her friends
-// @description:zh Liko对朋友的恶作剧
 // @author       Likolisu
 // @include      /^https:\/\/(www\.)?bondage(projects\.elementfx|-(europe|asia))\.com\/.*/
 // @icon         
@@ -51,17 +49,6 @@
             this._cachedBasePath = null;
         }
     };
-
-    // ===== Multilingual support =====
-    function detectLanguage() {
-        const browserLang = navigator.language || navigator.userLanguage;
-        let gameLang = null;
-        if (typeof TranslationLanguage !== 'undefined') {
-            gameLang = TranslationLanguage;
-        }
-        const lang = gameLang || browserLang || 'en';
-        return lang.toLowerCase().startsWith('zh') || lang.toLowerCase().includes('cn') || lang.toLowerCase().includes('tw');
-    }
 
     const messages = {
         en: {
@@ -128,8 +115,7 @@
     };
 
     function getMessage(key) {
-        const isZh = detectLanguage();
-        return messages[isZh ? 'zh' : 'en'][key];
+        return messages.en[key];
     }
 
     try {
@@ -229,7 +215,7 @@
         "Bra_笨笨蛋Luzi", "Decals"
     ];
 
-    // ===== 命令功能 =====
+    // ===== Commands =====
     function stealPanties(args) {
         try {
             let target;
@@ -276,13 +262,8 @@
 
             InventoryRemove(Player, "ItemHandheld");
 
-            const isZh = detectLanguage();
-            const itemName = isZh ?
-                  `${targetNick}刚脱下的内裤 💕` :
-                  `${targetNick}'s freshly removed panties 💕`;
-            const itemDesc = isZh ?
-                  `${targetNick}刚脱下的内裤，带有一点余温与气味💕` :
-                  `${targetNick}'s freshly removed panties, with a hint of warmth and scent 💕`;
+            const itemName = `${targetNick}'s freshly removed panties 💕`;
+            const itemDesc = `${targetNick}'s freshly removed panties, with a hint of warmth and scent 💕`;
 
             try {
                 InventoryWear(Player, "Panties", "ItemHandheld", itemColor, 0, target.MemberNumber, {
@@ -343,7 +324,7 @@
         try {
             let roomName = args.trim();
             if (!roomName) {
-                const promptText = detectLanguage() ? "输入房间名称" : "Enter room name";
+                const promptText = "Enter room name";
                 roomName = window.prompt(promptText);
                 if (!roomName) return;
             }
@@ -365,7 +346,7 @@
         }
     }
 
-    // ===== 活动系统 =====
+    // ===== Activity System =====
     let actData = {
         CustomPrerequisiteFuncs: new Map(),
         CustomActionCallbacks: new Map(),
@@ -563,7 +544,6 @@
         InventoryRemove(Player, "ItemHandheld");
 
         let handheldItemName;
-        const isZh = detectLanguage();
 
         if (itemType === "panties") {
             handheldItemName = "Panties";
@@ -571,21 +551,13 @@
             handheldItemName = "LongSock";
         }
 
-        const itemName = isZh ?
-              (itemType === "panties" ?
-               `${targetNick}刚脱下的内裤 💕` :
-               `${targetNick}刚脱下的袜子 💕`) :
-              (itemType === "panties" ?
-               `${targetNick}'s freshly removed panties 💕` :
-               `${targetNick}'s freshly removed socks 💕`);
+        const itemName = itemType === "panties" ?
+              `${targetNick}'s freshly removed panties 💕` :
+              `${targetNick}'s freshly removed socks 💕`;
 
-        const itemDesc = isZh ?
-              (itemType === "panties" ?
-               `${targetNick}刚脱下的内裤，带有一点余温与气味💕` :
-               `${targetNick}刚脱下的袜子，带有一点余温与气味💕`) :
-              (itemType === "panties" ?
-               `${targetNick}'s freshly removed panties, with a hint of warmth and scent 💕` :
-               `${targetNick}'s freshly removed socks, with a hint of warmth and scent 💕`);
+        const itemDesc = itemType === "panties" ?
+              `${targetNick}'s freshly removed panties, with a hint of warmth and scent 💕` :
+              `${targetNick}'s freshly removed socks, with a hint of warmth and scent 💕`;
 
         InventoryWear(Player, handheldItemName, "ItemHandheld", itemColor, 0, target.MemberNumber, {
             Name: itemName,
@@ -623,7 +595,7 @@
         return true;
     }
 
-    // ===== 注册活动 =====
+    // ===== Register Activities =====
     function registerActivities() {
         ImagePathHelper.clearCache();
 
@@ -667,7 +639,7 @@
             "ItemBoots", "ItemLegs", "ItemFeet", "ItemMouth", "ItemMouth2", "ItemMouth3"
         ];
 
-        // 1. 剪衣服
+        // 1. Cut Clothes
         AddActivity({
             Activity: {
                 Name: "CutClothes",
@@ -709,7 +681,7 @@
             CustomImage: ImagePathHelper.getAssetURL("Female3DCG/ItemHandheld/Preview/Scissors.png")
         });
 
-        // 2. 脱衣服
+        // 2. Remove Clothes
         AddActivity({
             Activity: {
                 Name: "RemoveClothes",
@@ -750,7 +722,7 @@
             CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
         });
 
-        // 3. 溶解衣物
+        // 3. Dissolve Clothes
         AddActivity({
             Activity: {
                 Name: "DissolveClothes",
@@ -791,7 +763,7 @@
             CustomImage: ImagePathHelper.getAssetURL("Female3DCG/ItemHandheld/Preview/PotionBottle.png")
         });
 
-        // 4. 偷内裤
+        // 4. Steal Panties
         AddActivity({
             Activity: {
                 Name: "StealPanties",
@@ -826,7 +798,7 @@
             CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Panties/Preview/Panties1.png")
         });
 
-        // 5. 脱下并握着内裤
+        // 5. Remove and Hold Panties
         AddActivity({
             Activity: {
                 Name: "RemoveAndHoldPanties",
@@ -866,7 +838,7 @@
             CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Panties/Preview/Panties1.png")
         });
 
-        // 6. 偷袜子
+        // 6. Steal Socks
         AddActivity({
             Activity: {
                 Name: "StealSocks",
@@ -902,7 +874,7 @@
             CustomImage: ImagePathHelper.getAssetURL("Female3DCG/ItemHood/Preview/Pantyhose.png")
         });
 
-        // 7. 脱下并握着袜子
+        // 7. Remove and Hold Socks
         AddActivity({
             Activity: {
                 Name: "RemoveAndHoldSocks",
@@ -943,7 +915,7 @@
             CustomImage: ImagePathHelper.getAssetURL("Female3DCG/ItemHood/Preview/Pantyhose.png")
         });
 
-        // 8. 拔呆毛
+        // 8. Pluck Ahoge
         AddActivity({
             Activity: {
                 Name: "PluckingHair_Razor",
@@ -983,7 +955,7 @@
         });
     }
 
-    // ===== Hook系统 =====
+    // ===== Hook System =====
     function setupHooks() {
         if (!modApi || !modApi.hookFunction) return;
 
@@ -1044,24 +1016,19 @@
         }
     }
 
-    // ===== 初始化 =====
+    // ===== Initialization =====
     waitFor(() => typeof Player !== "undefined" && typeof Player.MemberNumber === "number")
         .then(() => {
-        // 注册命令
+        // Register commands
         if (typeof CommandCombine === "function") {
-            const isZh = detectLanguage();
             CommandCombine([
-                { Tag: "steal", Description: isZh ? "偷取内裤" : "Steal panties", Action: (args) => stealPanties(args) },
-                { Tag: "偷取", Description: "偷取内裤", Action: (args) => stealPanties(args) },
-                { Tag: "dissolve", Description: isZh ? "溶解衣服" : "Dissolve clothes", Action: (args) => spillObscenePotion(args) },
-                { Tag: "溶解", Description: "溶解衣服", Action: (args) => spillObscenePotion(args) },
-                { Tag: "teleport", Description: isZh ? "传送" : "Teleport", Action: (args) => openPortal(args) },
-                { Tag: "傳送", Description: "传送", Action: (args) => openPortal(args) },
-                { Tag: "传送", Description: "传送", Action: (args) => openPortal(args) }
+                { Tag: "steal", Description: "Steal panties", Action: (args) => stealPanties(args) },
+                { Tag: "dissolve", Description: "Dissolve clothes", Action: (args) => spillObscenePotion(args) },
+                { Tag: "teleport", Description: "Teleport", Action: (args) => openPortal(args) }
             ]);
         }
 
-        // 等待活动系统
+        // Wait for activity system
         waitFor(() => typeof ActivityFemale3DCG !== "undefined" && typeof ActivityDictionary !== "undefined")
             .then(() => {
             registerActivities();
