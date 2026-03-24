@@ -742,6 +742,60 @@
         }
     }
 
+    function stealBraCmd(args) {
+        try {
+            const targetArg = (args || "").trim();
+            if (!targetArg) return chatSendLocal("Usage: /stealbra <player name or number>");
+            const target = getPlayer(targetArg);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            if (!hasBCItemPermission(target)) return chatSendLocal(getMessage('noPermission'));
+            if (!InventoryGet(target, "Bra")) return chatSendLocal(getNickname(target) + " " + getMessage('noBra'));
+            if (stealBra(target)) {
+                chatSendCustomAction(getNickname(Player) + " " + getMessage('stealBra') + " " + getNickname(target) + getMessage('stealBraSuffix'));
+            } else {
+                chatSendLocal(getMessage('stealFailed'));
+            }
+        } catch (error) {
+            console.error("Error in stealBraCmd:", error);
+        }
+    }
+
+    function stealGlovesCmd(args) {
+        try {
+            const targetArg = (args || "").trim();
+            if (!targetArg) return chatSendLocal("Usage: /stealgloves <player name or number>");
+            const target = getPlayer(targetArg);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            if (!hasBCItemPermission(target)) return chatSendLocal(getMessage('noPermission'));
+            if (!InventoryGet(target, "Gloves")) return chatSendLocal(getNickname(target) + " " + getMessage('noGloves'));
+            if (stealGloves(target)) {
+                chatSendCustomAction(getNickname(Player) + " " + getMessage('stealGloves') + " " + getNickname(target) + getMessage('stealGlovesSuffix'));
+            } else {
+                chatSendLocal(getMessage('stealFailed'));
+            }
+        } catch (error) {
+            console.error("Error in stealGlovesCmd:", error);
+        }
+    }
+
+    function stealShoesCmd(args) {
+        try {
+            const targetArg = (args || "").trim();
+            if (!targetArg) return chatSendLocal("Usage: /stealshoes <player name or number>");
+            const target = getPlayer(targetArg);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            if (!hasBCItemPermission(target)) return chatSendLocal(getMessage('noPermission'));
+            if (!InventoryGet(target, "Shoes")) return chatSendLocal(getNickname(target) + " " + getMessage('noShoes'));
+            if (stealShoes(target)) {
+                chatSendCustomAction(getNickname(Player) + " " + getMessage('stealShoes') + " " + getNickname(target) + getMessage('stealShoesSuffix'));
+            } else {
+                chatSendLocal(getMessage('stealFailed'));
+            }
+        } catch (error) {
+            console.error("Error in stealShoesCmd:", error);
+        }
+    }
+
     function dyeHair(target) {
         const hairGroups = ["HairFront", "HairBack", "HairAccessory1", "HairAccessory2", "HairAccessory3"];
         const bundle = ServerAppearanceBundle(target.Appearance).map(item => {
@@ -1982,6 +2036,9 @@
                 { Tag: "swap", Description: "Swap outfits with a player", Action: (args) => swapOutfits(args) },
                 { Tag: "copy", Description: "Copy a player's outfit", Action: (args) => copyOutfit(args) },
                 { Tag: "stealhat", Description: "Steal a player's hat and wear it", Action: (args) => stealHatCmd(args) },
+                { Tag: "stealbra", Description: "Steal a player's bra", Action: (args) => stealBraCmd(args) },
+                { Tag: "stealgloves", Description: "Steal a player's gloves", Action: (args) => stealGlovesCmd(args) },
+                { Tag: "stealshoes", Description: "Steal a player's shoes", Action: (args) => stealShoesCmd(args) },
                 { Tag: "prank", Description: "Apply a random prank to a player", Action: (args) => applyRandomPrank(getPlayer((args || "").trim())) },
                 { Tag: "roulette", Description: "Random prank on a random person in the room", Action: () => prankRoulette() },
                 { Tag: "silentstrip", Description: "Strip a player's clothes silently", Action: (args) => silentStrip(args) },
