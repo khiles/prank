@@ -7,9 +7,9 @@
 // @description:zh Liko对朋友的恶作剧
 // @author       Likolisu
 // @include      /^https:\/\/(www\.)?bondage(projects\.elementfx|-(europe|asia))\.com\/.*/
-// @icon         https://raw.githubusercontent.com/awdrrawd/liko-tool-Image-storage/refs/heads/main/Images/LOGO_2.png
+// @icon         
 // @grant        none
-// @require      https://awdrrawd.github.io/liko-Plugin-Repository/Plugins/expand/bcmodsdk.js
+// @require      https://github.com/Jomshir98/bondage-club-mod-sdk/releases/download/v1.2.0/bcmodsdk.js
 // @run-at       document-end
 // ==/UserScript==
 
@@ -25,7 +25,7 @@
     let modApi;
     const modversion = "1.5.1";
 
-    // ===== 图片路径辅助工具 =====
+    // ===== Image path helper tool =====
     const ImagePathHelper = {
         _cachedBasePath: null,
 
@@ -34,7 +34,7 @@
 
             let href = window.location.href;
 
-            // 确保结尾有斜线
+            // Make sure there is a slash at the end.
             if (!href.endsWith('/')) {
                 href = href.substring(0, href.lastIndexOf('/') + 1);
             }
@@ -52,7 +52,7 @@
         }
     };
 
-    // ===== 多语言支持 =====
+    // ===== Multilingual support =====
     function detectLanguage() {
         const browserLang = navigator.language || navigator.userLanguage;
         let gameLang = null;
@@ -124,67 +124,6 @@
             actStealSocksDesc: "SourceCharacter snatches TargetCharacter's socks",
             actRemoveHoldSocksDesc: "SourceCharacter pulls off TargetCharacter's socks and holds them",
             actRemoveHoldSocksSelf: "SourceCharacter pulls off their own socks and holds them"
-        },
-        zh: {
-            loaded: `Liko的恶作剧插件 v${modversion} 载入完成！`,
-            notFound: "找不到目标",
-            noPermission: "无权限",
-            noUnderwear: "没有穿内裤",
-            noSocks: "没有穿袜子",
-            stealFailed: "偷取失败",
-            removeFailed: "脱下失败",
-            nothingToRemove: "在这个部位没有可移除的衣物",
-
-            // Actions
-            stealUnderwear: "悄悄偷走了",
-            stealUnderwearSuffix: "的内裤 💕",
-            removedOwnUnderwear: "脱下了自己的内裤",
-            dissolveClothes: "用淫秽的药水溶解了",
-            dissolveClothesTarget: "的衣服",
-            dissolveOwnClothes: "用淫秽的药水溶解了自己的衣服",
-            enterPortal: "进入通往",
-            exitPortal: "从虫洞出来了",
-            cutClothes: "用剪刀剪掉了",
-            cutClothesTarget: "的",
-            cutOwnClothes: "用剪刀剪掉了自己的",
-            removeClothes: "脱掉了",
-            removeOwnClothes: "脱掉了自己的",
-            stoleUnderwear: "偷了",
-            removedAndHoldUnderwear: "脱下了",
-            holdUnderwear: "的内裤并握在手中",
-            holdOwnUnderwear: "脱下了自己的内裤并握在手中",
-            stoleSocks: "偷了",
-            socksSuffix: "的袜子",
-            removedAndHoldSocks: "脱下了",
-            holdSocks: "的袜子并握在手中",
-            holdOwnSocks: "脱下了自己的袜子并握在手中",
-            pluckingOwnHair: "拔下了自己的呆毛",
-            pluckingHair: "拔下了",
-            pluckingHairSuffix: "的呆毛",
-
-            // Activity labels
-            actCutClothes: "剪掉衣物",
-            actRemoveClothes: "脱掉衣物",
-            actDissolveClothes: "溶解衣物",
-            actStealPanties: "偷内裤",
-            actRemoveHoldPanties: "脱下并握着内裤",
-            actStealSocks: "偷袜子",
-            actRemoveHoldSocks: "脱下并握着袜子",
-            actPluckingHair: "拔呆毛",
-
-            // Activity descriptions
-            actCutClothesDesc: "SourceCharacter 用剪刀剪掉了 TargetCharacter 的衣物",
-            actCutClothesSelf: "SourceCharacter 用剪刀剪掉了自己的衣物",
-            actRemoveClothesDesc: "SourceCharacter 脱掉了 TargetCharacter 的衣物",
-            actRemoveClothesSelf: "SourceCharacter 脱掉了自己的衣物",
-            actDissolveClothesDesc: "SourceCharacter 对 TargetCharacter 使用了淫秽的药水",
-            actDissolveClothesSelf: "SourceCharacter 对自己使用了淫秽的药水",
-            actStealPantiesDesc: "SourceCharacter 偷了 TargetCharacter 的内裤",
-            actRemoveHoldPantiesDesc: "SourceCharacter 脱下了 TargetCharacter 的内裤并握在手中",
-            actRemoveHoldPantiesSelf: "SourceCharacter 脱下了自己的内裤并握在手中",
-            actStealSocksDesc: "SourceCharacter 偷了 TargetCharacter 的袜子",
-            actRemoveHoldSocksDesc: "SourceCharacter 脱下了 TargetCharacter 的袜子并握在手中",
-            actRemoveHoldSocksSelf: "SourceCharacter 脱下了自己的袜子并握在手中"
         }
     };
 
@@ -207,7 +146,7 @@
         console.error("[prank] Failed to initialize modApi", error);
     }
 
-    // ===== 工具函数 =====
+    // ===== Utility functions =====
     function waitFor(condition, timeout = 30000) {
         const start = Date.now();
         return new Promise((resolve, reject) => {
