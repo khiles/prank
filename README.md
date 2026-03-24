@@ -27,6 +27,7 @@ Type these in the chat box. `[player]` is the player's name or member number. Na
 | `/streak` | Strip all of your own clothes off |
 | `/swap [player]` | Swap outfits with a player |
 | `/copy [player]` | Copy a player's outfit and wear it yourself |
+| `/stealhat [player]` | Steal a player's hat and wear it yourself |
 | `/prank [player]` | Apply a random prank to a player |
 | `/roulette` | Apply a random prank to a random person in the room |
 | `/silentstrip [player]` | Strip a player's clothes off without sending a chat message |

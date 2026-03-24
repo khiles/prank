@@ -724,6 +724,24 @@
         return true;
     }
 
+    function stealHatCmd(args) {
+        try {
+            const targetArg = (args || "").trim();
+            if (!targetArg) return chatSendLocal("Usage: /stealhat <player name or number>");
+            const target = getPlayer(targetArg);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            if (!hasBCItemPermission(target)) return chatSendLocal(getMessage('noPermission'));
+            if (!InventoryGet(target, "Hat")) return chatSendLocal(getNickname(target) + " " + getMessage('noHat'));
+            if (stealHat(target)) {
+                chatSendCustomAction(getNickname(Player) + " " + getMessage('stealHat') + " " + getNickname(target) + getMessage('stealHatSuffix'));
+            } else {
+                chatSendLocal(getMessage('stealFailed'));
+            }
+        } catch (error) {
+            console.error("Error in stealHatCmd:", error);
+        }
+    }
+
     function dyeHair(target) {
         const hairGroups = ["HairFront", "HairBack", "HairAccessory1", "HairAccessory2", "HairAccessory3"];
         const bundle = ServerAppearanceBundle(target.Appearance).map(item => {
@@ -767,13 +785,13 @@
             const targetOther   = targetBundle.filter(i => !clothingGroups.includes(i.Group));
 
             ServerSend("ChatRoomCharacterUpdate", {
-                ID: Player.ID === 0 ? Player.OnlineID : Player.AccountName.replace("Online-", ""),
+                ID: Player.AccountName.replace("Online-", ""),
                 ActivePose: Player.ActivePose,
                 Appearance: [...playerOther, ...targetClothes]
             });
 
             ServerSend("ChatRoomCharacterUpdate", {
-                ID: target.ID === 0 ? target.OnlineID : target.AccountName.replace("Online-", ""),
+                ID: target.AccountName.replace("Online-", ""),
                 ActivePose: target.ActivePose,
                 Appearance: [...targetOther, ...playerClothes]
             });
@@ -1036,7 +1054,7 @@
             const targetClothes = ServerAppearanceBundle(target.Appearance).filter(i => clothingGroups.includes(i.Group));
 
             ServerSend("ChatRoomCharacterUpdate", {
-                ID: Player.ID === 0 ? Player.OnlineID : Player.AccountName.replace("Online-", ""),
+                ID: Player.AccountName.replace("Online-", ""),
                 ActivePose: Player.ActivePose,
                 Appearance: [...playerOther, ...targetClothes]
             });
@@ -1963,6 +1981,7 @@
                 { Tag: "streak", Description: "Strip all your own clothes off", Action: () => streak() },
                 { Tag: "swap", Description: "Swap outfits with a player", Action: (args) => swapOutfits(args) },
                 { Tag: "copy", Description: "Copy a player's outfit", Action: (args) => copyOutfit(args) },
+                { Tag: "stealhat", Description: "Steal a player's hat and wear it", Action: (args) => stealHatCmd(args) },
                 { Tag: "prank", Description: "Apply a random prank to a player", Action: (args) => applyRandomPrank(getPlayer((args || "").trim())) },
                 { Tag: "roulette", Description: "Random prank on a random person in the room", Action: () => prankRoulette() },
                 { Tag: "silentstrip", Description: "Strip a player's clothes silently", Action: (args) => silentStrip(args) },
