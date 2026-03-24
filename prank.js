@@ -134,9 +134,6 @@
             loopAllStopped: "Stopped all prank loops",
             loopAlready: "Already looping on",
             loopNone: "No active loop for that player",
-            boop: "boops",
-            boopSuffix: "'s nose 👉",
-            boopSelf: "boops their own nose 👉",
             bonk: "bonks",
             bonkSuffix: "on the head with a rolled-up newspaper 📰",
             bonkSelf: "bonks themselves on the head 📰",
@@ -150,6 +147,13 @@
             proposeSuffix: "💍 ...will they say yes?",
             adoptAction: "officially adopts",
             adoptSuffix: "as their child 👨‍👧",
+            wedgieAction: "sneaks up and gives",
+            wedgieSuffix: "a wedgie! 😬",
+            teaseAction: "leans close to",
+            teaseSuffix: "and whispers something that makes them go bright red... 😳",
+            teaseSelf: "teases themselves somehow. Impressive.",
+            flashAction: "flashes",
+            flashSuffix: "!! 😳",
 
             // Activity labels
             actCutClothes: "Cut Clothes",
@@ -197,9 +201,6 @@
             actHeadpat: "Headpat",
             actHeadpatDesc: "SourceCharacter gives TargetCharacter a gentle headpat",
             actHeadpatSelf: "SourceCharacter pats their own head",
-            actBoop: "Boop",
-            actBoopDesc: "SourceCharacter boops TargetCharacter's nose",
-            actBoopSelf: "SourceCharacter boops their own nose",
             actBonk: "Bonk",
             actBonkDesc: "SourceCharacter bonks TargetCharacter on the head with a rolled-up newspaper",
             actBonkSelf: "SourceCharacter bonks themselves on the head",
@@ -208,7 +209,12 @@
             actSerenadeSelf: "SourceCharacter serenades themselves",
             actNoogie: "Noogie",
             actNoogieDesc: "SourceCharacter grabs TargetCharacter and gives them a noogie",
-            actNoogieSelf: "SourceCharacter somehow gives themselves a noogie"
+            actNoogieSelf: "SourceCharacter somehow gives themselves a noogie",
+            actWedgie: "Wedgie",
+            actWedgieDesc: "SourceCharacter sneaks up and gives TargetCharacter a wedgie",
+            actTease: "Tease",
+            actTeaseDesc: "SourceCharacter leans close and whispers something that makes TargetCharacter go bright red",
+            actTeaseSelf: "SourceCharacter teases themselves somehow"
         }
     };
 
@@ -775,6 +781,16 @@
             chatSendCustomAction(getNickname(Player) + " " + getMessage('swapOutfits') + " " + getNickname(target) + " " + getMessage('swapOutfitsSuffix'));
         } catch (error) {
             console.error("Error in swapOutfits:", error);
+        }
+    }
+
+    function flash(args) {
+        try {
+            const target = getPlayer((args || "").trim());
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            chatSendCustomAction(getNickname(Player) + " " + getMessage('flashAction') + " " + getNickname(target) + " " + getMessage('flashSuffix'));
+        } catch (error) {
+            console.error("Error in flash:", error);
         }
     }
 
@@ -1772,28 +1788,7 @@
             CustomImage: ImagePathHelper.getAssetURL("Female3DCG/ItemHandheld/Preview/PotionBottle.png")
         });
 
-        // 16. Boop
-        AddActivity({
-            Activity: { Name: "Boop", MaxProgress: 20, MaxProgressSelf: 20, Prerequisite: [] },
-            Targets: [
-                { TargetLabel: getMessage('actBoop'), Name: "ItemMouth", SelfAllowed: true, TargetAction: getMessage('actBoopDesc'), TargetSelfAction: getMessage('actBoopSelf') },
-                { TargetLabel: getMessage('actBoop'), Name: "ItemNose", SelfAllowed: true, TargetAction: getMessage('actBoopDesc'), TargetSelfAction: getMessage('actBoopSelf') }
-            ],
-            CustomPrereqs: [{ Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") }],
-            CustomAction: {
-                Func: (target, args, next) => {
-                    const isSelf = target.MemberNumber === Player.MemberNumber;
-                    if (isSelf) {
-                        chatSendCustomAction(getNickname(Player) + " " + getMessage('boopSelf'));
-                    } else {
-                        chatSendCustomAction(getNickname(Player) + " " + getMessage('boop') + " " + getNickname(target) + getMessage('boopSuffix'));
-                    }
-                }
-            },
-            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
-        });
-
-        // 17. Bonk
+        // 16. Bonk
         AddActivity({
             Activity: { Name: "Bonk", MaxProgress: 30, MaxProgressSelf: 30, Prerequisite: [] },
             Targets: [
@@ -1848,6 +1843,46 @@
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('noogieSelf'));
                     } else {
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('noogie') + " " + getNickname(target) + " " + getMessage('noogieSuffix'));
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
+        });
+
+        // 20. Wedgie
+        AddActivity({
+            Activity: { Name: "Wedgie", MaxProgress: 40, MaxProgressSelf: 40, Prerequisite: [] },
+            Targets: [
+                { TargetLabel: getMessage('actWedgie'), Name: "ItemButt", SelfAllowed: false, TargetAction: getMessage('actWedgieDesc') },
+                { TargetLabel: getMessage('actWedgie'), Name: "ItemPelvis", SelfAllowed: false, TargetAction: getMessage('actWedgieDesc') }
+            ],
+            CustomPrereqs: [
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
+                { Name: "lsccHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBCItemPermission") }
+            ],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    chatSendCustomAction(getNickname(Player) + " " + getMessage('wedgieAction') + " " + getNickname(target) + " " + getMessage('wedgieSuffix'));
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
+        });
+
+        // 22. Tease
+        AddActivity({
+            Activity: { Name: "Tease", MaxProgress: 30, MaxProgressSelf: 30, Prerequisite: [] },
+            Targets: [
+                { TargetLabel: getMessage('actTease'), Name: "ItemEars", SelfAllowed: true, TargetAction: getMessage('actTeaseDesc'), TargetSelfAction: getMessage('actTeaseSelf') },
+                { TargetLabel: getMessage('actTease'), Name: "ItemNeck", SelfAllowed: true, TargetAction: getMessage('actTeaseDesc'), TargetSelfAction: getMessage('actTeaseSelf') }
+            ],
+            CustomPrereqs: [{ Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") }],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    const isSelf = target.MemberNumber === Player.MemberNumber;
+                    if (isSelf) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('teaseSelf'));
+                    } else {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('teaseAction') + " " + getNickname(target) + " " + getMessage('teaseSuffix'));
                     }
                 }
             },
@@ -1937,7 +1972,8 @@
                 { Tag: "loop", Description: "Keep pranking a player every 30s", Action: (args) => startLoop(args) },
                 { Tag: "stoploop", Description: "Stop prank loop (omit name to stop all)", Action: (args) => stopLoop(args) },
                 { Tag: "propose", Description: "Propose to a player", Action: (args) => propose(args) },
-                { Tag: "adopt", Description: "Adopt a player as your child", Action: (args) => adopt(args) }
+                { Tag: "adopt", Description: "Adopt a player as your child", Action: (args) => adopt(args) },
+                { Tag: "flash", Description: "Flash a player", Action: (args) => flash(args) }
             ]);
         }
 
