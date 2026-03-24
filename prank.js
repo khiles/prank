@@ -87,6 +87,13 @@
             pluckingOwnHair: "pluckes out their own ahoge",
             pluckingHair: "pluckes out",
             pluckingHairSuffix: "'s ahoge",
+            dyeClothes: "splashes a rainbow potion on",
+            dyeClothesTarget: "'s outfit, making it burst into wild colors! 🌈",
+            dyeOwnClothes: "splashes a rainbow potion all over their own outfit! 🌈",
+            streakAction: "dramatically streaks through the room! 🏃",
+            notHolding: "You are not holding anything",
+            giveTo: "gives",
+            giveSuffix: "to",
 
             // Activity labels
             actCutClothes: "Cut Clothes",
@@ -97,7 +104,8 @@
             actStealSocks: "Steal Socks",
             actRemoveHoldSocks: "Take Socks",
             actPluckingHair: "Pluck Ahoge",
-            
+            actDyeClothes: "Rainbow Dye",
+
             // Activity descriptions
             actCutClothesDesc: "SourceCharacter cuts off TargetCharacter's clothes using scissors",
             actCutClothesSelf: "SourceCharacter cuts off their own clothes using scissors",
@@ -110,7 +118,9 @@
             actRemoveHoldPantiesSelf: "SourceCharacter slips off their own panties holds them",
             actStealSocksDesc: "SourceCharacter snatches TargetCharacter's socks",
             actRemoveHoldSocksDesc: "SourceCharacter pulls off TargetCharacter's socks and holds them",
-            actRemoveHoldSocksSelf: "SourceCharacter pulls off their own socks and holds them"
+            actRemoveHoldSocksSelf: "SourceCharacter pulls off their own socks and holds them",
+            actDyeClothesDesc: "SourceCharacter splashes a rainbow potion on TargetCharacter's outfit",
+            actDyeClothesSelf: "SourceCharacter splashes a rainbow potion all over their own outfit"
         }
     };
 
@@ -595,6 +605,80 @@
         return true;
     }
 
+    function dyeClothes(target) {
+        const clothingGroups = [
+            "Cloth", "ClothLower", "Bra", "Panties", "Socks", "SocksRight", "SocksLeft",
+            "Shoes", "Gloves", "Hat", "Suit", "SuitLower", "Corset", "ClothOuter",
+            "ClothAccessory", "Necklace", "Mask", "Garters", "Bracelet", "Jewelry"
+        ];
+
+        const bundle = ServerAppearanceBundle(target.Appearance);
+        bundle.forEach(item => {
+            if (clothingGroups.includes(item.Group)) {
+                if (Array.isArray(item.Color)) {
+                    item.Color = item.Color.map(() => getRandomColor());
+                } else {
+                    item.Color = getRandomColor();
+                }
+            }
+        });
+
+        ServerSend("ChatRoomCharacterUpdate", {
+            ID: target.ID === 0 ? target.OnlineID : target.AccountName.replace("Online-", ""),
+            ActivePose: target.ActivePose,
+            Appearance: bundle
+        });
+    }
+
+    function giveItem(args) {
+        try {
+            const targetArg = (args || "").trim();
+            if (!targetArg) return chatSendLocal("Usage: /give <player name or number>");
+
+            const target = getPlayer(targetArg);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            if (target.MemberNumber === Player.MemberNumber) return chatSendLocal("You can't give an item to yourself");
+            if (!hasBCItemPermission(target)) return chatSendLocal(getMessage('noPermission'));
+
+            const heldItem = InventoryGet(Player, "ItemHandheld");
+            if (!heldItem) return chatSendLocal(getMessage('notHolding'));
+
+            const itemAssetName = heldItem.Asset?.Name;
+            const itemColor = heldItem.Color || "Default";
+            const craft = heldItem.Craft;
+            const displayName = craft?.Name || heldItem.Asset?.Description || itemAssetName;
+
+            InventoryRemove(Player, "ItemHandheld");
+            InventoryRemove(target, "ItemHandheld");
+
+            InventoryWear(target, itemAssetName, "ItemHandheld", itemColor, 0, Player.MemberNumber, craft || {});
+
+            ChatRoomCharacterUpdate(Player);
+            ChatRoomCharacterUpdate(target);
+
+            chatSendCustomAction(getNickname(Player) + " " + getMessage('giveTo') + " " + getNickname(target) + " " + displayName);
+        } catch (error) {
+            console.error("Error in giveItem:", error);
+        }
+    }
+
+    function streak() {
+        try {
+            const noClothesFilter = (item) => !appearanceGroupNames.includes(item.Group);
+            const appearance = ServerAppearanceBundle(Player.Appearance).filter(noClothesFilter);
+
+            ServerSend("ChatRoomCharacterUpdate", {
+                ID: Player.ID === 0 ? Player.OnlineID : Player.AccountName.replace("Online-", ""),
+                ActivePose: Player.ActivePose,
+                Appearance: appearance
+            });
+
+            chatSendCustomAction(getNickname(Player) + " " + getMessage('streakAction'));
+        } catch (error) {
+            console.error("Error in streak:", error);
+        }
+    }
+
     // ===== Register Activities =====
     function registerActivities() {
         ImagePathHelper.clearCache();
@@ -953,6 +1037,40 @@
             },
             CustomImage: ImagePathHelper.getAssetURL("Female3DCG/ItemHood/Preview/Pantyhose.png")
         });
+
+        // 9. Rainbow Dye
+        actData.CustomPrerequisiteFuncs.set("lsccCanInteract", actData.CustomPrerequisiteFuncs.get("lsccCanInteract"));
+        AddActivity({
+            Activity: {
+                Name: "DyeClothes",
+                MaxProgress: 50,
+                MaxProgressSelf: 50,
+                Prerequisite: []
+            },
+            Targets: [{
+                TargetLabel: getMessage('actDyeClothes'),
+                Name: "ItemHead",
+                SelfAllowed: true,
+                TargetAction: getMessage('actDyeClothesDesc'),
+                TargetSelfAction: getMessage('actDyeClothesSelf')
+            }],
+            CustomPrereqs: [
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
+                { Name: "lsccHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBCItemPermission") }
+            ],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    dyeClothes(target);
+                    const isSelf = target.MemberNumber === Player.MemberNumber;
+                    if (isSelf) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('dyeOwnClothes'));
+                    } else {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('dyeClothes') + " " + getNickname(target) + getMessage('dyeClothesTarget'));
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/ItemHandheld/Preview/PotionBottle.png")
+        });
     }
 
     // ===== Hook System =====
@@ -1024,7 +1142,9 @@
             CommandCombine([
                 { Tag: "steal", Description: "Steal panties", Action: (args) => stealPanties(args) },
                 { Tag: "dissolve", Description: "Dissolve clothes", Action: (args) => spillObscenePotion(args) },
-                { Tag: "teleport", Description: "Teleport", Action: (args) => openPortal(args) }
+                { Tag: "teleport", Description: "Teleport", Action: (args) => openPortal(args) },
+                { Tag: "give", Description: "Give held item to a player", Action: (args) => giveItem(args) },
+                { Tag: "streak", Description: "Strip all your own clothes off", Action: () => streak() }
             ]);
         }
 
