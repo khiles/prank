@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         lscc - Mischief and Fun
-// @namespace    
+// @namespace
 // @version      1.9.0
 // @description  lscc's prank on her friends
 // @author       Lucifer's Sidechick
 // @include      /^https:\/\/(www\.)?bondage(projects\.elementfx|-(europe|asia))\.com\/.*/
-// @icon         
+// @icon
 // @grant        none
 // @require      https://github.com/Jomshir98/bondage-club-mod-sdk/releases/download/v1.2.0/bcmodsdk.js
+// @updateURL    https://khiles.github.io/prank/prank.user.js
+// @downloadURL  https://khiles.github.io/prank/prank.user.js
 // @run-at       document-end
 // ==/UserScript==
 
@@ -309,6 +311,26 @@
         } else {
             console.log("Local: " + message);
         }
+    }
+
+    // ===== Auto-update check =====
+    const UPDATE_URL = "https://khiles.github.io/prank/prank.user.js";
+
+    function checkForUpdates() {
+        fetch(UPDATE_URL, { cache: "no-store" })
+            .then(r => r.text())
+            .then(text => {
+                const match = text.match(/@version\s+([\d.]+)/);
+                if (!match) return;
+                const remote = match[1];
+                if (remote !== modversion) {
+                    chatSendLocal(
+                        `⬆️ Prank Mod update available: v${modversion} → v${remote}! ` +
+                        `Tampermonkey will auto-update on next page load, or click the extension icon to update now.`
+                    );
+                }
+            })
+            .catch(() => {}); // Silently ignore network errors
     }
 
     // ===== Hidden packet system =====
@@ -2575,6 +2597,7 @@
             registerActivities();
             setupHooks();
             chatSendLocal(getMessage('loaded'));
+            checkForUpdates();
         })
             .catch(err => console.error("[prank] Activity registration failed:", err));
     })
