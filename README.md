@@ -9,7 +9,7 @@ A userscript mod for [Bondage Club](https://www.bondageprojects.elementfx.com/) 
 ## Installation
 
 1. Install a userscript manager (e.g. [Tampermonkey](https://www.tampermonkey.net/))
-2. Install the script by opening `prank.js` https://khiles.github.io/prank/prank.user.js in Tampermonkey
+2. Install the script by opening `prank.js`or [Click here](https://khiles.github.io/prank/prank.user.js)) in Tampermonkey
 3. Navigate to Bondage Club — the mod loads automatically
 
 ---
