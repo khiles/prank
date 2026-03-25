@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         lscc - Mischief and Fun
 // @namespace    
-// @version      1.6.0
+// @version      1.7.0
 // @description  lscc's prank on her friends
 // @author       Lucifer's Sidechick
 // @include      /^https:\/\/(www\.)?bondage(projects\.elementfx|-(europe|asia))\.com\/.*/
@@ -21,7 +21,7 @@
     window.LSCC_PRANK_LOADED = true;
 
     let modApi;
-    const modversion = "1.6.0";
+    const modversion = "1.7.0";
 
     // ===== Image path helper tool =====
     const ImagePathHelper = {
@@ -214,7 +214,24 @@
             actWedgieDesc: "SourceCharacter sneaks up and gives TargetCharacter a wedgie",
             actTease: "Tease",
             actTeaseDesc: "SourceCharacter leans close and whispers something that makes TargetCharacter go bright red",
-            actTeaseSelf: "SourceCharacter teases themselves somehow"
+            actTeaseSelf: "SourceCharacter teases themselves somehow",
+
+            // Poke
+            pokeAction: "pokes",
+            pokeSuffix: "👉",
+            pokeSelf: "pokes themselves for no apparent reason 👉",
+
+            // Dare
+            dareAction: "dares",
+            dareSuffix: "! Will they accept? 🎯",
+
+            // Taunt
+            tauntAction: "taunts",
+
+            // Activity labels / descriptions
+            actPoke: "Poke",
+            actPokeDesc: "SourceCharacter pokes TargetCharacter",
+            actPokeSelf: "SourceCharacter pokes themselves"
         }
     };
 
@@ -1241,6 +1258,9 @@
         { tag: "pranks",     desc: "Show players with active prank loops" },
         { tag: "mimic",      desc: "Start mirroring a player's outfit" },
         { tag: "stopmimic",  desc: "Stop mirroring (omit name to stop all)" },
+        { tag: "poke",       desc: "Poke a player" },
+        { tag: "dare",       desc: "Dare a player to do something (optional: specify the dare)" },
+        { tag: "taunt",      desc: "Taunt a player with a random remark" },
         { tag: "list",       desc: "Show all prank commands" },
     ];
 
@@ -1331,6 +1351,75 @@
         clearInterval(mimicTargets.get(target.MemberNumber));
         mimicTargets.delete(target.MemberNumber);
         chatSendLocal("Stopped mimicking " + getNickname(target));
+    }
+
+    function pokeCmd(args) {
+        try {
+            const targetArg = (args || "").trim();
+            if (!targetArg) return chatSendLocal("Usage: /poke <player name or number>");
+            const target = getPlayer(targetArg);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            const isSelf = target.MemberNumber === Player.MemberNumber;
+            if (isSelf) {
+                chatSendCustomAction(getNickname(Player) + " " + getMessage('pokeSelf'));
+            } else {
+                chatSendCustomAction(getNickname(Player) + " " + getMessage('pokeAction') + " " + getNickname(target) + " " + getMessage('pokeSuffix'));
+            }
+        } catch (error) {
+            console.error("Error in pokeCmd:", error);
+        }
+    }
+
+    const RANDOM_DARES = [
+        "spin around three times without stopping",
+        "compliment every person in the room",
+        "do their best superhero pose",
+        "tell a joke (it has to be funny)",
+        "confess something embarrassing",
+        "sing a line from their favorite song",
+        "act like a cat for 10 seconds",
+        "do their best impression of someone here",
+        "strike a dramatic pose and hold it for 5 seconds",
+        "say something kind to the next person who speaks"
+    ];
+
+    function dareCmd(args) {
+        try {
+            const parts = (args || "").trim().split(/\s+/);
+            if (!parts[0]) return chatSendLocal("Usage: /dare <player> [dare text]");
+            const target = getPlayer(parts[0]);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            const dareText = parts.slice(1).join(" ") || RANDOM_DARES[Math.floor(Math.random() * RANDOM_DARES.length)];
+            chatSendCustomAction(getNickname(Player) + " " + getMessage('dareAction') + " " + getNickname(target) + " to " + dareText + getMessage('dareSuffix'));
+        } catch (error) {
+            console.error("Error in dareCmd:", error);
+        }
+    }
+
+    const RANDOM_TAUNTS = [
+        "bets you can't even touch your toes 🤭",
+        "doesn't think you have what it takes 😏",
+        "says your dance moves seriously need work 💃",
+        "wonders if you're always this easy to tease 😈",
+        "thinks your poker face needs serious practice 🃏",
+        "is pretty sure a goldfish has a longer attention span than you 🐟",
+        "challenges you to do something impressive for once 👀",
+        "heard your fashion sense went on vacation and never came back 🧣",
+        "says you look like you need a hug... or maybe just a nap 😴",
+        "bets you blink first 👁️"
+    ];
+
+    function tauntCmd(args) {
+        try {
+            const targetArg = (args || "").trim();
+            if (!targetArg) return chatSendLocal("Usage: /taunt <player name or number>");
+            const target = getPlayer(targetArg);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            const line = RANDOM_TAUNTS[Math.floor(Math.random() * RANDOM_TAUNTS.length)];
+            chatSendCustomAction(getNickname(Player) + " " + getMessage('tauntAction') + " " + getNickname(target) + ": \"" + line + "\"");
+        } catch (error) {
+            console.error("Error in tauntCmd:", error);
+        }
     }
 
     // ===== Register Activities =====
@@ -2108,6 +2197,28 @@
             },
             CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
         });
+
+        // 23. Poke
+        AddActivity({
+            Activity: { Name: "Poke", MaxProgress: 20, MaxProgressSelf: 20, Prerequisite: [] },
+            Targets: [
+                { TargetLabel: getMessage('actPoke'), Name: "ItemArms", SelfAllowed: true, TargetAction: getMessage('actPokeDesc'), TargetSelfAction: getMessage('actPokeSelf') },
+                { TargetLabel: getMessage('actPoke'), Name: "ItemHands", SelfAllowed: true, TargetAction: getMessage('actPokeDesc'), TargetSelfAction: getMessage('actPokeSelf') },
+                { TargetLabel: getMessage('actPoke'), Name: "ItemTorso", SelfAllowed: true, TargetAction: getMessage('actPokeDesc'), TargetSelfAction: getMessage('actPokeSelf') }
+            ],
+            CustomPrereqs: [{ Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") }],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    const isSelf = target.MemberNumber === Player.MemberNumber;
+                    if (isSelf) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('pokeSelf'));
+                    } else {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('pokeAction') + " " + getNickname(target) + " " + getMessage('pokeSuffix'));
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
+        });
     }
 
     // ===== Hook System =====
@@ -2201,6 +2312,9 @@
                 { Tag: "pranks", Description: "Show players with active prank loops", Action: () => showPranks() },
                 { Tag: "mimic", Description: "Mirror a player's outfit every 3s", Action: (args) => startMimic(args) },
                 { Tag: "stopmimic", Description: "Stop mirroring (omit name to stop all)", Action: (args) => stopMimic(args) },
+                { Tag: "poke", Description: "Poke a player", Action: (args) => pokeCmd(args) },
+                { Tag: "dare", Description: "Dare a player to do something", Action: (args) => dareCmd(args) },
+                { Tag: "taunt", Description: "Taunt a player with a random remark", Action: (args) => tauntCmd(args) },
                 { Tag: "list", Description: "Show all prank commands", Action: () => listCommands() }
             ]);
 

@@ -2,7 +2,7 @@
 
 A userscript mod for [Bondage Club](https://www.bondageprojects.elementfx.com/) that adds a comprehensive prank system with slash commands and integrated in-game activities.
 
-**Version:** 1.6.0
+**Version:** 1.7.0
 
 ---
 
@@ -45,6 +45,9 @@ Type these in the chat box. `[player]` is the player's name or member number. Na
 | `/pranks` | Show which players currently have active prank loops |
 | `/mimic [player]` | Start mirroring a player's outfit every 3 seconds |
 | `/stopmimic [player]` | Stop mirroring a player (omit name to stop all) |
+| `/poke [player]` | Poke a player |
+| `/dare [player] [dare]` | Dare a player publicly (random dare if none given) |
+| `/taunt [player]` | Taunt a player with a random remark |
 | `/list` | Print all available prank commands to local chat |
 
 ### Examples
