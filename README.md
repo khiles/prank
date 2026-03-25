@@ -2,7 +2,7 @@
 
 A userscript mod for [Bondage Club](https://www.bondageprojects.elementfx.com/) that adds a comprehensive prank system with slash commands and integrated in-game activities.
 
-**Version:** 1.8.0
+**Version:** 1.9.0
 
 ---
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         lscc - Mischief and Fun
 // @namespace    
-// @version      1.8.0
+// @version      1.9.0
 // @description  lscc's prank on her friends
 // @author       Lucifer's Sidechick
 // @include      /^https:\/\/(www\.)?bondage(projects\.elementfx|-(europe|asia))\.com\/.*/
@@ -21,7 +21,7 @@
     window.LSCC_PRANK_LOADED = true;
 
     let modApi;
-    const modversion = "1.8.0";
+    const modversion = "1.9.0";
 
     // ===== Image path helper tool =====
     const ImagePathHelper = {
@@ -420,6 +420,7 @@
                 chatSendCustomAction(playerNick + " " + getMessage('removedOwnUnderwear'));
             } else {
                 chatSendCustomAction(playerNick + " " + getMessage('stealUnderwear') + " " + targetNick + getMessage('stealUnderwearSuffix'));
+                sendPrankPacket({ type: "steal_panties", source: Player.MemberNumber, target: target.MemberNumber });
             }
 
         } catch (error) {
@@ -449,6 +450,7 @@
             });
 
             chatSendCustomAction(getNickname(Player) + " " + getMessage('dissolveClothes') + " " + getNickname(target) + getMessage('dissolveClothesTarget'));
+            sendPrankPacket({ type: "dissolve", source: Player.MemberNumber, target: target.MemberNumber });
         } catch (error) {
             console.error("Error in spillObscenePotion:", error);
         }
@@ -768,6 +770,7 @@
             if (!InventoryGet(target, "Hat")) return chatSendLocal(getNickname(target) + " " + getMessage('noHat'));
             if (stealHat(target)) {
                 chatSendCustomAction(getNickname(Player) + " " + getMessage('stealHat') + " " + getNickname(target) + getMessage('stealHatSuffix'));
+                sendPrankPacket({ type: "steal_hat", source: Player.MemberNumber, target: target.MemberNumber });
             } else {
                 chatSendLocal(getMessage('stealFailed'));
             }
@@ -786,6 +789,7 @@
             if (!InventoryGet(target, "Bra")) return chatSendLocal(getNickname(target) + " " + getMessage('noBra'));
             if (stealBra(target)) {
                 chatSendCustomAction(getNickname(Player) + " " + getMessage('stealBra') + " " + getNickname(target) + getMessage('stealBraSuffix'));
+                sendPrankPacket({ type: "steal_bra", source: Player.MemberNumber, target: target.MemberNumber });
             } else {
                 chatSendLocal(getMessage('stealFailed'));
             }
@@ -804,6 +808,7 @@
             if (!InventoryGet(target, "Gloves")) return chatSendLocal(getNickname(target) + " " + getMessage('noGloves'));
             if (stealGloves(target)) {
                 chatSendCustomAction(getNickname(Player) + " " + getMessage('stealGloves') + " " + getNickname(target) + getMessage('stealGlovesSuffix'));
+                sendPrankPacket({ type: "steal_gloves", source: Player.MemberNumber, target: target.MemberNumber });
             } else {
                 chatSendLocal(getMessage('stealFailed'));
             }
@@ -822,6 +827,7 @@
             if (!InventoryGet(target, "Shoes")) return chatSendLocal(getNickname(target) + " " + getMessage('noShoes'));
             if (stealShoes(target)) {
                 chatSendCustomAction(getNickname(Player) + " " + getMessage('stealShoes') + " " + getNickname(target) + getMessage('stealShoesSuffix'));
+                sendPrankPacket({ type: "steal_shoes", source: Player.MemberNumber, target: target.MemberNumber });
             } else {
                 chatSendLocal(getMessage('stealFailed'));
             }
@@ -885,6 +891,7 @@
             });
 
             chatSendCustomAction(getNickname(Player) + " " + getMessage('swapOutfits') + " " + getNickname(target) + " " + getMessage('swapOutfitsSuffix'));
+            sendPrankPacket({ type: "swap", source: Player.MemberNumber, target: target.MemberNumber });
         } catch (error) {
             console.error("Error in swapOutfits:", error);
         }
@@ -895,6 +902,7 @@
             const target = getPlayer((args || "").trim());
             if (!target) return chatSendLocal(getMessage('notFound'));
             chatSendCustomAction(getNickname(Player) + " " + getMessage('flashAction') + " " + getNickname(target) + " " + getMessage('flashSuffix'));
+            sendPrankPacket({ type: "flash", source: Player.MemberNumber, target: target.MemberNumber });
         } catch (error) {
             console.error("Error in flash:", error);
         }
@@ -905,6 +913,7 @@
             const target = getPlayer((args || "").trim());
             if (!target) return chatSendLocal(getMessage('notFound'));
             chatSendCustomAction(getNickname(Player) + " " + getMessage('proposeAction') + " " + getNickname(target) + " " + getMessage('proposeSuffix'));
+            sendPrankPacket({ type: "propose", source: Player.MemberNumber, target: target.MemberNumber });
         } catch (error) {
             console.error("Error in propose:", error);
         }
@@ -915,6 +924,7 @@
             const target = getPlayer((args || "").trim());
             if (!target) return chatSendLocal(getMessage('notFound'));
             chatSendCustomAction(getNickname(Player) + " " + getMessage('adoptAction') + " " + getNickname(target) + " " + getMessage('adoptSuffix'));
+            sendPrankPacket({ type: "adopt", source: Player.MemberNumber, target: target.MemberNumber });
         } catch (error) {
             console.error("Error in adopt:", error);
         }
@@ -1016,6 +1026,7 @@
                 Appearance: bundle
             });
             chatSendCustomAction(getNickname(Player) + " " + getMessage('blackoutAction') + " " + getNickname(target) + getMessage('blackoutSuffix'));
+            sendPrankPacket({ type: "blackout", source: Player.MemberNumber, target: target.MemberNumber });
         } catch (error) {
             console.error("Error in blackout:", error);
         }
@@ -1164,6 +1175,7 @@
             });
 
             chatSendCustomAction(getNickname(Player) + " " + getMessage('copyOutfit') + " " + getNickname(target) + getMessage('copyOutfitSuffix'));
+            sendPrankPacket({ type: "copy", source: Player.MemberNumber, target: target.MemberNumber });
         } catch (error) {
             console.error("Error in copyOutfit:", error);
         }
@@ -1349,6 +1361,7 @@
             mimicTargets.set(target.MemberNumber, id);
             chatSendLocal("Now mimicking " + getNickname(target));
             chatSendCustomAction(getNickname(Player) + " starts copying " + getNickname(target) + "'s every move... 🪞");
+            sendPrankPacket({ type: "mimic", source: Player.MemberNumber, target: target.MemberNumber });
         } catch (error) {
             console.error("Error in startMimic:", error);
         }
@@ -1495,36 +1508,135 @@
     }
 
     // ===== Hidden packet handler =====
+    const PRANK_REACTIONS = {
+        tickle:        ["bursts into uncontrollable laughter, tears streaming 😂",
+                        "squirms and kicks trying to escape the tickles 🤣",
+                        "begs for mercy between fits of giggles 😆",
+                        "collapses giggling and can barely breathe 😂"],
+        headpat:       ["melts a little and leans into the headpat 🥺",
+                        "makes a small happy noise and scrunches up 🐾",
+                        "tries to look dignified but clearly enjoys it 💕",
+                        "lets out a tiny contented sigh ✨"],
+        bonk:          ["rubs their head and glares indignantly 😤",
+                        "yelps and clutches their head 🤕",
+                        "crosses their arms and sulks 😒",
+                        "opens their mouth to protest but can't find the words 😶"],
+        serenade:      ["covers their face and turns absolutely scarlet 😳",
+                        "desperately looks for somewhere to hide 😖",
+                        "starts slowly backing away 😅",
+                        "slow claps sarcastically, face completely red 👏"],
+        noogie:        ["flails helplessly and demands to be released 😤",
+                        "squirms furiously to no avail 😩",
+                        "lets out a long-suffering groan 😮‍💨",
+                        "vows revenge with great dignity 😤"],
+        wedgie:        ["lets out an undignified yelp of surprise 😱",
+                        "turns bright red and shuffles awkwardly 😳",
+                        "stares in disbelief at their predicament 😶"],
+        tease:         ["goes absolutely scarlet and refuses to make eye contact 🌹",
+                        "sputters incoherently and looks away 💦",
+                        "covers their face and pretends not to exist 🫣",
+                        "makes a strangled noise and stares at the floor 😳"],
+        steal_panties: ["looks down with wide eyes in complete shock 😱",
+                        "makes a horrified noise and covers themselves 🙈",
+                        "stands frozen in absolute disbelief 😶",
+                        "lets out a very undignified squeak 😳"],
+        steal_bra:     ["grabs at their chest in shock 😱",
+                        "gasps and immediately crosses their arms 😤",
+                        "stands frozen for a full second before reacting 😶"],
+        steal_hat:     ["reaches up to their head with a confused expression 🤔",
+                        "looks around frantically for their hat 👀",
+                        "pats their bare head in utter bewilderment 😶"],
+        steal_gloves:  ["looks down at their hands in surprise 👀",
+                        "flexes their fingers bewilderedly 🤔",
+                        "stares at their bare hands in mild indignation 😤"],
+        steal_shoes:   ["wiggles their bare toes and looks down in disbelief 😱",
+                        "shuffles awkwardly on the cold floor 🤣",
+                        "looks around helplessly for their shoes 👀"],
+        dissolve:      ["shrieks and frantically tries to cover themselves 😱",
+                        "stands there in absolute shock for a moment 😶",
+                        "makes a noise that is not entirely a word 🙈"],
+        dye_clothes:   ["stares at their outfit in horrified silence 😱",
+                        "turns slowly to witness the full rainbow damage 🌈",
+                        "opens their mouth, closes it, opens it again 😶"],
+        dye_hair:      ["frantically pats their newly colored hair in dismay 😱",
+                        "catches a glimpse in a reflection and freezes 🪞",
+                        "touches their hair and lets out a quiet noise of despair 😩"],
+        flash:         ["covers their eyes with a scandalized expression 🙈",
+                        "stares wide-eyed and then immediately looks away 😳",
+                        "shields their gaze with a hand and sputters 🫣"],
+        swap:          ["looks down at their new outfit with deep confusion 😶",
+                        "glances between themselves and the other person in bewilderment 👀"],
+        copy:          ["squints and looks between themselves and their copycat 👀",
+                        "puts their hands on their hips, thoroughly unimpressed 😒"]
+    };
+
+    function prankReact(type, sourceNick) {
+        const lines = PRANK_REACTIONS[type];
+        if (!lines) return;
+        const line = lines[Math.floor(Math.random() * lines.length)];
+        setTimeout(() => chatSendCustomAction(getNickname(Player) + " " + line), 700);
+    }
+
     function handlePrankPacket(payload, senderMemberNumber) {
         if (!payload || !payload.type) return;
+        const isTarget = payload.target === Player.MemberNumber;
+
         switch (payload.type) {
             case "poke": {
-                if (payload.target !== Player.MemberNumber) break;
+                if (!isTarget) break;
                 const count = (pokeCounters.get(payload.source) || 0) + 1;
                 pokeCounters.set(payload.source, count);
                 const src = ChatRoomCharacter?.find(c => c.MemberNumber === payload.source);
                 const srcNick = src ? getNickname(src) : "Someone";
                 const myNick = getNickname(Player);
                 if (count <= 2) {
-                    chatSendCustomAction(myNick + " glances over at " + srcNick + " with a raised eyebrow 👀");
+                    setTimeout(() => chatSendCustomAction(myNick + " glances over at " + srcNick + " with a raised eyebrow 👀"), 700);
                 } else if (count <= 4) {
-                    chatSendCustomAction(myNick + " squirms and tries to dodge away from " + srcNick + " 😤");
+                    setTimeout(() => chatSendCustomAction(myNick + " squirms and tries to dodge away from " + srcNick + " 😤"), 700);
                 } else if (count <= 6) {
-                    chatSendCustomAction(myNick + " has had ENOUGH — pokes " + srcNick + " right back! 👉");
+                    setTimeout(() => chatSendCustomAction(myNick + " has had ENOUGH — pokes " + srcNick + " right back! 👉"), 700);
                 } else {
-                    chatSendCustomAction(myNick + " is completely unfazed at this point. Professional poker-resistance achieved 🛡️");
+                    setTimeout(() => chatSendCustomAction(myNick + " is completely unfazed. Professional poker-resistance achieved 🛡️"), 700);
                 }
                 break;
             }
             case "dare":
-                if (payload.target === Player.MemberNumber) {
-                    chatSendLocal("You've been dared! Respond in chat... if you dare. 🎯");
-                }
+                if (isTarget) chatSendLocal("You've been dared! Respond in chat... if you dare. 🎯");
                 break;
             case "taunt":
-                if (payload.target === Player.MemberNumber) {
-                    chatSendLocal("You've been taunted! Retaliate with /taunt 😏");
-                }
+                if (isTarget) chatSendLocal("You've been taunted! Retaliate with /taunt 😏");
+                break;
+            case "propose":
+                if (isTarget) chatSendLocal("You've been proposed to! 💍 How will you respond?");
+                break;
+            case "adopt":
+                if (isTarget) chatSendLocal("You've been adopted! 👨‍👧");
+                break;
+            case "mimic":
+                if (isTarget) chatSendLocal("Someone is mimicking your outfit! 🪞");
+                break;
+            case "blackout":
+                if (isTarget) chatSendLocal("Your outfit has been turned all black... 🖤");
+                break;
+            case "tickle":
+            case "headpat":
+            case "bonk":
+            case "serenade":
+            case "noogie":
+            case "wedgie":
+            case "tease":
+            case "steal_panties":
+            case "steal_bra":
+            case "steal_hat":
+            case "steal_gloves":
+            case "steal_shoes":
+            case "dissolve":
+            case "dye_clothes":
+            case "dye_hair":
+            case "flash":
+            case "swap":
+            case "copy":
+                if (isTarget) prankReact(payload.type);
                 break;
         }
     }
@@ -1708,6 +1820,7 @@
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('dissolveOwnClothes'));
                     } else {
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('dissolveClothes') + " " + getNickname(target) + getMessage('dissolveClothesTarget'));
+                        sendPrankPacket({ type: "dissolve", source: Player.MemberNumber, target: target.MemberNumber });
                     }
                 }
             },
@@ -1743,6 +1856,7 @@
 
                     if (stealItem(target, "panties")) {
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('stoleUnderwear') + " " + getNickname(target) + getMessage('stealUnderwearSuffix'));
+                        sendPrankPacket({ type: "steal_panties", source: Player.MemberNumber, target: target.MemberNumber });
                     } else {
                         ChatRoomSendLocal(getMessage('stealFailed'), 5000);
                     }
@@ -1937,6 +2051,7 @@
                     }
                     if (stealBra(target)) {
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('stealBra') + " " + getNickname(target) + getMessage('stealBraSuffix'));
+                        sendPrankPacket({ type: "steal_bra", source: Player.MemberNumber, target: target.MemberNumber });
                     } else {
                         ChatRoomSendLocal(getMessage('stealFailed'), 5000);
                     }
@@ -1969,6 +2084,7 @@
                     }
                     if (stealHat(target)) {
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('stealHat') + " " + getNickname(target) + getMessage('stealHatSuffix'));
+                        sendPrankPacket({ type: "steal_hat", source: Player.MemberNumber, target: target.MemberNumber });
                     } else {
                         ChatRoomSendLocal(getMessage('stealFailed'), 5000);
                     }
@@ -2004,6 +2120,7 @@
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('dyeOwnHair'));
                     } else {
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('dyeHair') + " " + getNickname(target) + getMessage('dyeHairSuffix'));
+                        sendPrankPacket({ type: "dye_hair", source: Player.MemberNumber, target: target.MemberNumber });
                     }
                 }
             },
@@ -2038,6 +2155,7 @@
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('dyeOwnClothes'));
                     } else {
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('dyeClothes') + " " + getNickname(target) + getMessage('dyeClothesTarget'));
+                        sendPrankPacket({ type: "dye_clothes", source: Player.MemberNumber, target: target.MemberNumber });
                     }
                 }
             },
@@ -2069,6 +2187,7 @@
                     }
                     if (stealGloves(target)) {
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('stealGloves') + " " + getNickname(target) + getMessage('stealGlovesSuffix'));
+                        sendPrankPacket({ type: "steal_gloves", source: Player.MemberNumber, target: target.MemberNumber });
                     } else {
                         ChatRoomSendLocal(getMessage('stealFailed'), 5000);
                     }
@@ -2102,6 +2221,7 @@
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('headpatSelf'));
                     } else {
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('headpat') + " " + getNickname(target) + " " + getMessage('headpatSuffix'));
+                        sendPrankPacket({ type: "headpat", source: Player.MemberNumber, target: target.MemberNumber });
                     }
                 }
             },
@@ -2131,6 +2251,7 @@
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('tickleSelf'));
                     } else {
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('tickle') + " " + getNickname(target) + getMessage('tickleSuffix'));
+                        sendPrankPacket({ type: "tickle", source: Player.MemberNumber, target: target.MemberNumber });
                     }
                 }
             },
@@ -2162,6 +2283,7 @@
                     }
                     if (stealShoes(target)) {
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('stealShoes') + " " + getNickname(target) + getMessage('stealShoesSuffix'));
+                        sendPrankPacket({ type: "steal_shoes", source: Player.MemberNumber, target: target.MemberNumber });
                     } else {
                         ChatRoomSendLocal(getMessage('stealFailed'), 5000);
                     }
@@ -2217,6 +2339,7 @@
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('bonkSelf'));
                     } else {
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('bonk') + " " + getNickname(target) + " " + getMessage('bonkSuffix'));
+                        sendPrankPacket({ type: "bonk", source: Player.MemberNumber, target: target.MemberNumber });
                     }
                 }
             },
@@ -2238,6 +2361,7 @@
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('serenadeSelf'));
                     } else {
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('serenade') + " " + getNickname(target) + " " + getMessage('serenadeSuffix'));
+                        sendPrankPacket({ type: "serenade", source: Player.MemberNumber, target: target.MemberNumber });
                     }
                 }
             },
@@ -2258,6 +2382,7 @@
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('noogieSelf'));
                     } else {
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('noogie') + " " + getNickname(target) + " " + getMessage('noogieSuffix'));
+                        sendPrankPacket({ type: "noogie", source: Player.MemberNumber, target: target.MemberNumber });
                     }
                 }
             },
@@ -2279,6 +2404,7 @@
             CustomAction: {
                 Func: (target, args, next) => {
                     chatSendCustomAction(getNickname(Player) + " " + getMessage('wedgieAction') + " " + getNickname(target) + " " + getMessage('wedgieSuffix'));
+                    sendPrankPacket({ type: "wedgie", source: Player.MemberNumber, target: target.MemberNumber });
                 }
             },
             CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
@@ -2299,6 +2425,7 @@
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('teaseSelf'));
                     } else {
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('teaseAction') + " " + getNickname(target) + " " + getMessage('teaseSuffix'));
+                        sendPrankPacket({ type: "tease", source: Player.MemberNumber, target: target.MemberNumber });
                     }
                 }
             },
