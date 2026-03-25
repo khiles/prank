@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         lscc - Mischief and Fun
 // @namespace    
-// @version      1.7.0
+// @version      1.8.0
 // @description  lscc's prank on her friends
 // @author       Lucifer's Sidechick
 // @include      /^https:\/\/(www\.)?bondage(projects\.elementfx|-(europe|asia))\.com\/.*/
@@ -21,7 +21,7 @@
     window.LSCC_PRANK_LOADED = true;
 
     let modApi;
-    const modversion = "1.7.0";
+    const modversion = "1.8.0";
 
     // ===== Image path helper tool =====
     const ImagePathHelper = {
@@ -309,6 +309,18 @@
         } else {
             console.log("Local: " + message);
         }
+    }
+
+    // ===== Hidden packet system =====
+    const PRANK_PKT = "LSCC_PRANK";
+
+    function sendPrankPacket(payload) {
+        if (typeof ServerSend !== "function") return;
+        ServerSend("ChatRoomChat", {
+            Type: "Hidden",
+            Content: PRANK_PKT,
+            Dictionary: [{ Tag: "data", Text: JSON.stringify(payload) }]
+        });
     }
 
     function hasBCItemPermission(target) {
@@ -911,6 +923,7 @@
     const prankLoops = new Map();
     const outfitSnapshots = new Map(); // MemberNumber -> appearance bundle
     const mimicTargets = new Map();    // target MemberNumber -> intervalId
+    const pokeCounters = new Map();    // sourceMemberNumber -> count (pokes I've received from them)
 
     function takeSnapshot(target) {
         try {
@@ -1261,6 +1274,8 @@
         { tag: "poke",       desc: "Poke a player" },
         { tag: "dare",       desc: "Dare a player to do something (optional: specify the dare)" },
         { tag: "taunt",      desc: "Taunt a player with a random remark" },
+        { tag: "crown",      desc: "Crown a player with a random superlative title" },
+        { tag: "gossip",     desc: "Whisper a random rumor about a player to the room" },
         { tag: "list",       desc: "Show all prank commands" },
     ];
 
@@ -1364,6 +1379,7 @@
                 chatSendCustomAction(getNickname(Player) + " " + getMessage('pokeSelf'));
             } else {
                 chatSendCustomAction(getNickname(Player) + " " + getMessage('pokeAction') + " " + getNickname(target) + " " + getMessage('pokeSuffix'));
+                sendPrankPacket({ type: "poke", source: Player.MemberNumber, target: target.MemberNumber });
             }
         } catch (error) {
             console.error("Error in pokeCmd:", error);
@@ -1391,6 +1407,7 @@
             if (!target) return chatSendLocal(getMessage('notFound'));
             const dareText = parts.slice(1).join(" ") || RANDOM_DARES[Math.floor(Math.random() * RANDOM_DARES.length)];
             chatSendCustomAction(getNickname(Player) + " " + getMessage('dareAction') + " " + getNickname(target) + " to " + dareText + getMessage('dareSuffix'));
+            sendPrankPacket({ type: "dare", source: Player.MemberNumber, target: target.MemberNumber });
         } catch (error) {
             console.error("Error in dareCmd:", error);
         }
@@ -1417,8 +1434,98 @@
             if (!target) return chatSendLocal(getMessage('notFound'));
             const line = RANDOM_TAUNTS[Math.floor(Math.random() * RANDOM_TAUNTS.length)];
             chatSendCustomAction(getNickname(Player) + " " + getMessage('tauntAction') + " " + getNickname(target) + ": \"" + line + "\"");
+            sendPrankPacket({ type: "taunt", source: Player.MemberNumber, target: target.MemberNumber });
         } catch (error) {
             console.error("Error in tauntCmd:", error);
+        }
+    }
+
+    const RANDOM_SUPERLATIVES = [
+        "Most Likely to Trip Over Their Own Shoes",
+        "Most Likely to Cause Chaos and Blame Someone Else",
+        "Most Likely to Be Found Napping in a Corner",
+        "Best Hair in the Room (Probably)",
+        "Most Likely to Challenge a Random Stranger",
+        "Reigning Champion of Absolutely Nothing",
+        "Most Dramatically Underestimated Person Here",
+        "Voted Most Likely to Start a Spontaneous Dance Party",
+        "Official Room Gremlin",
+        "Certified Main Character Energy",
+        "Most Likely to Steal the Show Without Even Trying",
+        "Undisputed Vibe Check Champion"
+    ];
+
+    function crownCmd(args) {
+        try {
+            const targetArg = (args || "").trim();
+            if (!targetArg) return chatSendLocal("Usage: /crown <player name or number>");
+            const target = getPlayer(targetArg);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            const title = RANDOM_SUPERLATIVES[Math.floor(Math.random() * RANDOM_SUPERLATIVES.length)];
+            chatSendCustomAction(getNickname(Player) + " places a crown on " + getNickname(target) + " — officially declaring them \"" + title + "\" 👑");
+        } catch (error) {
+            console.error("Error in crownCmd:", error);
+        }
+    }
+
+    const RANDOM_GOSSIP = [
+        "apparently fell asleep during their own story once",
+        "was once outsmarted by a door",
+        "has a secret talent nobody knows about",
+        "once tried to pet a statue thinking it was a cat",
+        "claims to be a morning person but nobody believes them",
+        "reportedly laughed at their own joke for five minutes straight",
+        "once got lost in a room with only two doors",
+        "absolutely cannot resist a good conspiracy theory",
+        "has never finished a single cup of tea while it was still warm",
+        "once waved back at someone who wasn't actually waving at them"
+    ];
+
+    function gossipCmd(args) {
+        try {
+            const targetArg = (args || "").trim();
+            if (!targetArg) return chatSendLocal("Usage: /gossip <player name or number>");
+            const target = getPlayer(targetArg);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            const rumor = RANDOM_GOSSIP[Math.floor(Math.random() * RANDOM_GOSSIP.length)];
+            chatSendCustomAction(getNickname(Player) + " leans in and whispers to the room: \"I heard " + getNickname(target) + " " + rumor + "...\" 🤫");
+        } catch (error) {
+            console.error("Error in gossipCmd:", error);
+        }
+    }
+
+    // ===== Hidden packet handler =====
+    function handlePrankPacket(payload, senderMemberNumber) {
+        if (!payload || !payload.type) return;
+        switch (payload.type) {
+            case "poke": {
+                if (payload.target !== Player.MemberNumber) break;
+                const count = (pokeCounters.get(payload.source) || 0) + 1;
+                pokeCounters.set(payload.source, count);
+                const src = ChatRoomCharacter?.find(c => c.MemberNumber === payload.source);
+                const srcNick = src ? getNickname(src) : "Someone";
+                const myNick = getNickname(Player);
+                if (count <= 2) {
+                    chatSendCustomAction(myNick + " glances over at " + srcNick + " with a raised eyebrow 👀");
+                } else if (count <= 4) {
+                    chatSendCustomAction(myNick + " squirms and tries to dodge away from " + srcNick + " 😤");
+                } else if (count <= 6) {
+                    chatSendCustomAction(myNick + " has had ENOUGH — pokes " + srcNick + " right back! 👉");
+                } else {
+                    chatSendCustomAction(myNick + " is completely unfazed at this point. Professional poker-resistance achieved 🛡️");
+                }
+                break;
+            }
+            case "dare":
+                if (payload.target === Player.MemberNumber) {
+                    chatSendLocal("You've been dared! Respond in chat... if you dare. 🎯");
+                }
+                break;
+            case "taunt":
+                if (payload.target === Player.MemberNumber) {
+                    chatSendLocal("You've been taunted! Retaliate with /taunt 😏");
+                }
+                break;
         }
     }
 
@@ -2214,6 +2321,7 @@
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('pokeSelf'));
                     } else {
                         chatSendCustomAction(getNickname(Player) + " " + getMessage('pokeAction') + " " + getNickname(target) + " " + getMessage('pokeSuffix'));
+                        sendPrankPacket({ type: "poke", source: Player.MemberNumber, target: target.MemberNumber });
                     }
                 }
             },
@@ -2224,6 +2332,20 @@
     // ===== Hook System =====
     function setupHooks() {
         if (!modApi || !modApi.hookFunction) return;
+
+        modApi.hookFunction("ChatRoomMessage", 4, (args, next) => {
+            const msg = args[0];
+            if (msg && msg.Type === "Hidden" && msg.Content === PRANK_PKT) {
+                try {
+                    const payload = JSON.parse(msg.Dictionary?.[0]?.Text || "{}");
+                    handlePrankPacket(payload, msg.Sender);
+                } catch(e) {
+                    console.error("[prank] Failed to parse hidden packet:", e);
+                }
+                return;
+            }
+            return next(args);
+        });
 
         modApi.hookFunction("ActivityCheckPrerequisite", 4, (args, next) => {
             const prereqName = args[0];
@@ -2315,6 +2437,8 @@
                 { Tag: "poke", Description: "Poke a player", Action: (args) => pokeCmd(args) },
                 { Tag: "dare", Description: "Dare a player to do something", Action: (args) => dareCmd(args) },
                 { Tag: "taunt", Description: "Taunt a player with a random remark", Action: (args) => tauntCmd(args) },
+                { Tag: "crown", Description: "Crown a player with a random superlative title", Action: (args) => crownCmd(args) },
+                { Tag: "gossip", Description: "Whisper a random rumor about a player to the room", Action: (args) => gossipCmd(args) },
                 { Tag: "list", Description: "Show all prank commands", Action: () => listCommands() }
             ]);
 
