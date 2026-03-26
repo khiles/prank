@@ -306,7 +306,9 @@
     }
 
     function chatSendLocal(message, timeout = 10000) {
-        if (typeof ChatRoomMessage === "function") {
+        if (typeof ChatRoomSendLocal === "function") {
+            ChatRoomSendLocal(message, timeout);
+        } else if (typeof ChatRoomMessage === "function") {
             ChatRoomMessage({ Content: message, Type: "LocalMessage" }, timeout);
         } else {
             console.log("Local: " + message);
@@ -898,18 +900,21 @@
             const playerClothes = playerBundle.filter(i => clothingGroups.includes(i.Group));
             const playerOther   = playerBundle.filter(i => !clothingGroups.includes(i.Group));
             const targetClothes = targetBundle.filter(i => clothingGroups.includes(i.Group));
-            const targetOther   = targetBundle.filter(i => !clothingGroups.includes(i.Group));
 
+            // Apply target's clothes to ourselves (self-updates are always accepted by the server)
             ServerSend("ChatRoomCharacterUpdate", {
                 ID: Player.AccountName.replace("Online-", ""),
                 ActivePose: Player.ActivePose,
                 Appearance: [...playerOther, ...targetClothes]
             });
 
-            ServerSend("ChatRoomCharacterUpdate", {
-                ID: target.AccountName.replace("Online-", ""),
-                ActivePose: target.ActivePose,
-                Appearance: [...targetOther, ...playerClothes]
+            // Ask the target's prank mod to apply our clothes to them.
+            // If they don't have the mod, only our side of the swap takes effect.
+            sendPrankPacket({
+                type: "swap_apply",
+                source: Player.MemberNumber,
+                target: target.MemberNumber,
+                clothes: playerClothes
             });
 
             chatSendCustomAction(getNickname(Player) + " " + getMessage('swapOutfits') + " " + getNickname(target) + " " + getMessage('swapOutfitsSuffix'));
@@ -1317,7 +1322,7 @@
         const lines = ["=== Prank Commands ==="].concat(
             COMMANDS_HELP.map(c => `  /${c.tag} — ${c.desc}`)
         );
-        lines.forEach(line => chatSendLocal(line));
+        chatSendLocal(lines.join("\n"), 20000);
     }
 
     function showPranks() {
@@ -1659,6 +1664,26 @@
             case "swap":
             case "copy":
                 if (isTarget) prankReact(payload.type);
+                break;
+
+            case "swap_apply":
+                if (isTarget && Array.isArray(payload.clothes)) {
+                    try {
+                        const clothingGroups = [
+                            "Cloth", "ClothLower", "Bra", "Panties", "Socks", "SocksRight", "SocksLeft",
+                            "Shoes", "Gloves", "Hat", "Suit", "SuitLower", "Corset", "ClothOuter", "ClothAccessory"
+                        ];
+                        const myOther = ServerAppearanceBundle(Player.Appearance)
+                            .filter(i => !clothingGroups.includes(i.Group));
+                        ServerSend("ChatRoomCharacterUpdate", {
+                            ID: Player.AccountName.replace("Online-", ""),
+                            ActivePose: Player.ActivePose,
+                            Appearance: [...myOther, ...payload.clothes]
+                        });
+                    } catch(e) {
+                        console.error("[prank] swap_apply failed:", e);
+                    }
+                }
                 break;
         }
     }
