@@ -1,0 +1,269 @@
+// ==UserScript==
+// @name         Ultimate Petplay Addon 2
+// @namespace    https://www.bondageprojects.com/
+// @version      2.2
+// @description  Adds petplay roles, pet lists, linking, and HUD with memory and emoji indicators, plus role picking UI where Switch can pick Dom or Pet subroles, with toggle button on top-left.
+// @author       kittenzflight (fixed & extended by ChatGPT)
+// @match        https://*.bondageprojects.elementfx.com/R*/*
+// @match        https://*.bondage-europe.com/R*/*
+// @match        https://*.bondageprojects.com/R*/*
+// @grant        match
+// @updateURL    https://raw.githubusercontent.com/kittenzflight/U.P.A/main/upa.user.js
+// @downloadURL  https://raw.githubusercontent.com/kittenzflight/U.P.A/main/upa.user.js
+// ==/UserScript==
+
+(function () {
+  'use strict';
+
+  const LOCAL_STORAGE_KEY = 'UPA_Roles';
+  const HUD_COLLAPSED_KEY = 'UPA_HUD_Collapsed';
+
+  const MAIN_ROLES = ['Dom', 'Switch', 'Pet'];
+  const DOM_SUBROLES = [
+    'Mistress 👑', 'Soft-dom 🌸', 'Owner 🏡', 'Trainer 🎯',
+    'Domina 🖤', 'Madame 🎩', 'Lady 👑', 'Goddess 🌟', 'Queen 👸', 'Empress 💎', 'Baroness 🏰', 'Countess 🕯️',
+    'Boss Bitch 🔥', 'Supreme ⚡', 'Siren 🎶', 'Alpha 🐺', 'Headmistress 📚', 'She-Who-Must-Be-Obeyed 🗝️',
+    'The Enforcer ⚔️', 'Mistress of Pain 😈', 'Dark Queen 🖤', 'Dungeon Queen 🔒', 'Leather Lady 🧥',
+    'High Priestess 🔮', 'Executioner 🪓', 'Witch Queen 🧙‍♀️', 'Latex Queen 🧪', 'Bondage Mistress 🔗',
+    'Sadistic Siren 🩸', 'Fetish Empress 💅', 'Strap-On Queen 🍆', 'Slavebreaker 🔥', 'Punishment Princess 🎀',
+    'Silk Dominatrix 🖤', 'Flogger Empress 🥥', 'Harness Queen 🔗', 'Spankmistress 💥', 'Chainbreaker ⛓️',
+    'Rubber Mistress 🧤', 'Sultry Sadist 🔥', 'Shackles Mistress ⛓️', 'Knot Mistress 🪢', 'Leash Keeper 🐾',
+    'Strapdown Mistress 🎀', 'Punishment Princess 🩸', 'Feather Tease 🪶', 'Veiled Mistress 🎭', 'Sensation Mistress 👁️',
+    'Boot Enforcer 👢', 'Razor Mistress 🔪', 'Dom Control 🎮', 'Temptress Tease 😈', 'Discipline Duchess 🎯'
+  ];
+
+  const PET_SUBROLES = [
+    'Puppy 🐶', 'Kitty 🐱', 'Bunny 🐰', 'Fox 🦊', 'Pony 🐴', 'Dragon 🐉',
+    'Wolf 🐺', 'Ferret 🐾', 'Tiger 🐯', 'Otter 🥶', 'Panda 🐼', 'Unicorn 🦩',
+    'Gryphon 🦅', 'Neko 😺', 'Kobold 🐲', 'Slime 🧪', 'Fairy 🙻',
+    'Phoenix 🔥', 'Basilisk  🐍', 'Kelpie 🌊', 'Chimera Cub  🦁', 'Tatzelwurm 🐲',
+    'Jackalope 🦌', 'Peryton  🪽', 'Simurgh  🦚', 'Alkonost  🎶', 'Baku  🐘',
+    'Zouwu  🌈', 'Tanuki  🦝', 'Qilin  🐉', 'Amarok 🌑'
+  ];
+
+  let upaRoles = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}');
+  let upaOwners = JSON.parse(localStorage.getItem('UPA_Owners') || '{}');
+  let upaPets = JSON.parse(localStorage.getItem('UPA_Pets') || '{}');
+  let upaRequests = JSON.parse(localStorage.getItem('UPA_Requests') || '{}');
+  let upaPetRules = JSON.parse(localStorage.getItem('UPA_PetRules') || '{}');
+  let upaPetNames = JSON.parse(localStorage.getItem('UPA_PetNames') || '{}');
+
+  function saveAllData() {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(upaRoles));
+    localStorage.setItem('UPA_Owners', JSON.stringify(upaOwners));
+    localStorage.setItem('UPA_Pets', JSON.stringify(upaPets));
+    localStorage.setItem('UPA_Requests', JSON.stringify(upaRequests));
+    localStorage.setItem('UPA_PetRules', JSON.stringify(upaPetRules));
+    localStorage.setItem('UPA_PetNames', JSON.stringify(upaPetNames));
+  }
+
+  function getCurrentMemberNumber() {
+    if (typeof Player !== 'undefined') {
+      return Player.MemberNumber?.toString();
+    }
+    return null;
+  }
+
+  function resetRoleData() {
+    const memberNumber = getCurrentMemberNumber();
+    if (!memberNumber) return alert('Player not detected yet.');
+    if (!confirm('Reset your role and unlink ownerships?')) return;
+
+    delete upaRoles[memberNumber];
+    delete upaOwners[memberNumber];
+    delete upaPetRules[memberNumber];
+    delete upaPetNames[memberNumber];
+    delete upaRequests[memberNumber];
+
+    for (const owner in upaPets) {
+      upaPets[owner] = upaPets[owner].filter(pet => pet !== memberNumber);
+    }
+
+    saveAllData();
+    updateHUD();
+  }
+
+  function setHUDCollapsed(val) {
+    localStorage.setItem(HUD_COLLAPSED_KEY, val ? 'true' : 'false');
+  }
+
+  function isHUDCollapsed() {
+    return localStorage.getItem(HUD_COLLAPSED_KEY) === 'true';
+  }
+
+  function createToggleButton() {
+    const existingToggle = document.getElementById('upa-toggle-btn');
+    if (existingToggle) existingToggle.remove();
+
+    const toggleBtn = document.createElement('img');
+    toggleBtn.id = 'upa-toggle-btn';
+    toggleBtn.src = 'https://media.discordapp.net/attachments/1263743445638447125/1377502718004035594/R.png?ex=683932e0&is=6837e160&hm=28729dda36680d1e21fa1549db1189bf46c8cbda2f4bcfb7ceb6e9cb934831b5&=&format=webp&quality=lossless';
+    toggleBtn.style.position = 'fixed';
+    toggleBtn.style.top = '10px';
+    toggleBtn.style.left = '10px'; // top-left corner
+    toggleBtn.style.width = '40px';
+    toggleBtn.style.height = '40px';
+    toggleBtn.style.cursor = 'pointer';
+    toggleBtn.style.zIndex = 10001;
+    toggleBtn.title = isHUDCollapsed() ? 'Expand U.P.A HUD' : 'Collapse U.P.A HUD';
+
+    toggleBtn.onclick = () => {
+      setHUDCollapsed(!isHUDCollapsed());
+      updateHUD();
+      toggleBtn.title = isHUDCollapsed() ? 'Expand U.P.A HUD' : 'Collapse U.P.A HUD';
+    };
+
+    document.body.appendChild(toggleBtn);
+  }
+
+  function createHUD() {
+    const existing = document.getElementById('upa-hud');
+    if (existing) existing.remove();
+
+    if (isHUDCollapsed()) {
+      createToggleButton();
+      return;
+    }
+
+    const container = document.createElement('div');
+    container.id = 'upa-hud';
+    container.style = 'position:fixed;top:60px;left:10px;background:#2c0e12;padding:10px;color:#fefefe;z-index:10000;border-radius:8px;font-size:13px;font-family:Arial;border:1px solid #444;min-width:250px;max-width:320px;max-height:80vh;overflow:auto;';
+
+    const memberNumber = getCurrentMemberNumber();
+    if (!memberNumber) {
+      container.innerHTML = '<em>Waiting for player data...</em>';
+      document.body.appendChild(container);
+      createToggleButton();
+      return;
+    }
+
+    const role = upaRoles[memberNumber];
+    const locked = role && role.locked;
+
+    const title = document.createElement('div');
+    title.innerHTML = '<strong>U.P.A:</strong>';
+    title.style.marginBottom = '6px';
+    container.appendChild(title);
+
+    container.innerHTML += `<div><strong>Your role:</strong> ${role?.main || 'None'}<br><strong>Sub-role:</strong> ${role?.sub || ''}</div>`;
+
+    if (!locked) {
+      const rolePicker = document.createElement('div');
+      rolePicker.style.marginTop = '8px';
+
+      const mainSelect = document.createElement('select');
+      MAIN_ROLES.forEach(r => {
+        const opt = new Option(r, r, false, role?.main === r);
+        mainSelect.add(opt);
+      });
+
+      const subSelect = document.createElement('select');
+      function updateSubRoles() {
+        subSelect.innerHTML = '';
+        let list = mainSelect.value === 'Dom' ? DOM_SUBROLES : mainSelect.value === 'Pet' ? PET_SUBROLES : DOM_SUBROLES.concat(PET_SUBROLES);
+        list.forEach(s => subSelect.add(new Option(s, s, false, role?.sub === s)));
+      }
+      updateSubRoles();
+      mainSelect.onchange = () => updateSubRoles();
+
+      const saveBtn = document.createElement('button');
+      saveBtn.textContent = 'Set Role';
+      saveBtn.style.marginLeft = '6px';
+      saveBtn.onclick = () => {
+        upaRoles[memberNumber] = {
+          main: mainSelect.value,
+          sub: subSelect.value,
+          locked: true
+        };
+        saveAllData();
+        updateHUD();
+      };
+
+      rolePicker.append('Main Role: ', mainSelect, ' Sub-role: ', subSelect, ' ', saveBtn);
+      container.appendChild(rolePicker);
+    }
+
+    const pets = upaPets[memberNumber] || [];
+    const owner = upaOwners[memberNumber];
+
+    if (pets.length > 0) pets.forEach(id => container.innerHTML += `<div>Linked Pet: #${id}</div>`);
+    if (owner) container.innerHTML += `<div>Owned by: #${owner}</div>`;
+
+    const pending = Object.entries(upaRequests).filter(([k, v]) => v === memberNumber);
+    if (pending.length > 0) {
+      container.innerHTML += '<div><strong>Pending Ownership Requests:</strong></div>';
+      pending.forEach(([id]) => {
+        const row = document.createElement('div');
+        row.style.marginTop = '4px';
+        row.innerHTML = `From #${id}`;
+
+        const accept = document.createElement('button');
+        accept.textContent = 'Accept';
+        accept.style.marginLeft = '6px';
+        accept.onclick = () => {
+          upaOwners[memberNumber] = id;
+          if (!upaPets[id]) upaPets[id] = [];
+          if (!upaPets[id].includes(memberNumber)) upaPets[id].push(memberNumber);
+          delete upaRequests[id];
+          saveAllData();
+          updateHUD();
+        };
+
+        const decline = document.createElement('button');
+        decline.textContent = 'Decline';
+        decline.style.marginLeft = '6px';
+        decline.onclick = () => {
+          delete upaRequests[id];
+          saveAllData();
+          updateHUD();
+        };
+
+        row.append(' ', accept, decline);
+        container.appendChild(row);
+      });
+    }
+
+    const btnRow = document.createElement('div');
+    btnRow.style.marginTop = '8px';
+
+    const linkBtn = document.createElement('button');
+    linkBtn.textContent = 'Link Pet';
+    linkBtn.onclick = () => {
+      const target = prompt('Enter member ID to request as your pet:');
+      if (target && target !== memberNumber) {
+        upaRequests[memberNumber] = target;
+        saveAllData();
+        alert(`Request sent to #${target}`);
+      }
+    };
+
+    const resetBtn = document.createElement('button');
+    resetBtn.textContent = 'Reset Role';
+    resetBtn.style.marginLeft = '6px';
+    resetBtn.onclick = resetRoleData;
+
+    btnRow.append(linkBtn, resetBtn);
+    container.appendChild(btnRow);
+
+    document.body.appendChild(container);
+
+    createToggleButton();
+  }
+
+  function updateHUD() {
+    createHUD();
+  }
+
+  let attempts = 0;
+  const maxAttempts = 20;
+  const interval = setInterval(() => {
+    if (getCurrentMemberNumber()) {
+      clearInterval(interval);
+      updateHUD();
+    } else {
+      attempts++;
+      if (attempts >= maxAttempts) clearInterval(interval);
+    }
+  }, 1000);
+
+})();
