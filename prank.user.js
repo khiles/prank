@@ -1717,11 +1717,13 @@
         });
 
         const clothingTargets = [
-            "ItemNeck", "ItemNipples", "ItemBreast", "ItemTorso",
-            "ItemNeckAccessories", "ItemNeckRestraints", "ItemNipplesPiercings", "ItemTorso2",
-            "ItemHands", "ItemHandheld", "ItemPelvis", "ItemButt", "ItemVulvaPiercings", "ItemVulva",
-            "ItemPenis",
-            "ItemBoots", "ItemLegs", "ItemFeet", "ItemMouth", "ItemMouth2", "ItemMouth3"
+            "ItemHead", "ItemNeck", "ItemNeckAccessories", "ItemNeckRestraints",
+            "ItemNipples", "ItemNipplesPiercings", "ItemBreast",
+            "ItemArms", "ItemHands", "ItemHandheld",
+            "ItemTorso", "ItemTorso2",
+            "ItemPelvis", "ItemButt", "ItemVulvaPiercings", "ItemVulva", "ItemPenis",
+            "ItemBoots", "ItemLegs", "ItemFeet",
+            "ItemMouth"
         ];
 
         // 1. Cut Clothes
@@ -2222,8 +2224,8 @@
         AddActivity({
             Activity: {
                 Name: "Headpat",
-                MaxProgress: 20,
-                MaxProgressSelf: 20,
+                MaxProgress: 0,
+                MaxProgressSelf: 0,
                 Prerequisite: []
             },
             Targets: [{
@@ -2349,7 +2351,7 @@
 
         // 16. Bonk
         AddActivity({
-            Activity: { Name: "Bonk", MaxProgress: 30, MaxProgressSelf: 30, Prerequisite: [] },
+            Activity: { Name: "Bonk", MaxProgress: 0, MaxProgressSelf: 0, Prerequisite: [] },
             Targets: [
                 { TargetLabel: getMessage('actBonk'), Name: "ItemHead", SelfAllowed: true, TargetAction: getMessage('actBonkDesc'), TargetSelfAction: getMessage('actBonkSelf') }
             ],
@@ -2370,7 +2372,7 @@
 
         // 18. Serenade
         AddActivity({
-            Activity: { Name: "Serenade", MaxProgress: 40, MaxProgressSelf: 40, Prerequisite: [] },
+            Activity: { Name: "Serenade", MaxProgress: 0, MaxProgressSelf: 0, Prerequisite: [] },
             Targets: [
                 { TargetLabel: getMessage('actSerenade'), Name: "ItemEars", SelfAllowed: true, TargetAction: getMessage('actSerenadeDesc'), TargetSelfAction: getMessage('actSerenadeSelf') },
                 { TargetLabel: getMessage('actSerenade'), Name: "ItemMouth", SelfAllowed: true, TargetAction: getMessage('actSerenadeDesc'), TargetSelfAction: getMessage('actSerenadeSelf') }
@@ -2392,7 +2394,7 @@
 
         // 19. Noogie
         AddActivity({
-            Activity: { Name: "Noogie", MaxProgress: 30, MaxProgressSelf: 30, Prerequisite: [] },
+            Activity: { Name: "Noogie", MaxProgress: 0, MaxProgressSelf: 0, Prerequisite: [] },
             Targets: [
                 { TargetLabel: getMessage('actNoogie'), Name: "ItemHead", SelfAllowed: true, TargetAction: getMessage('actNoogieDesc'), TargetSelfAction: getMessage('actNoogieSelf') }
             ],
@@ -2456,7 +2458,7 @@
 
         // 23. Poke
         AddActivity({
-            Activity: { Name: "Poke", MaxProgress: 20, MaxProgressSelf: 20, Prerequisite: [] },
+            Activity: { Name: "Poke", MaxProgress: 0, MaxProgressSelf: 0, Prerequisite: [] },
             Targets: [
                 { TargetLabel: getMessage('actPoke'), Name: "ItemArms", SelfAllowed: true, TargetAction: getMessage('actPokeDesc'), TargetSelfAction: getMessage('actPokeSelf') },
                 { TargetLabel: getMessage('actPoke'), Name: "ItemHands", SelfAllowed: true, TargetAction: getMessage('actPokeDesc'), TargetSelfAction: getMessage('actPokeSelf') },
