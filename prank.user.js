@@ -894,28 +894,32 @@
                 "Shoes", "Gloves", "Hat", "Suit", "SuitLower", "Corset", "ClothOuter", "ClothAccessory"
             ];
 
+            // Snapshot BOTH outfits before touching anything
             const playerBundle = ServerAppearanceBundle(Player.Appearance);
             const targetBundle = ServerAppearanceBundle(target.Appearance);
 
             const playerClothes = playerBundle.filter(i => clothingGroups.includes(i.Group));
             const playerOther   = playerBundle.filter(i => !clothingGroups.includes(i.Group));
             const targetClothes = targetBundle.filter(i => clothingGroups.includes(i.Group));
+            const targetOther   = targetBundle.filter(i => !clothingGroups.includes(i.Group));
 
-            // Apply target's clothes to ourselves (self-updates are always accepted by the server)
+            // Step 1: put player's clothes on target
             ServerSend("ChatRoomCharacterUpdate", {
-                ID: Player.AccountName.replace("Online-", ""),
-                ActivePose: Player.ActivePose,
-                Appearance: [...playerOther, ...targetClothes]
+                ID: target.AccountName.replace("Online-", ""),
+                ActivePose: target.ActivePose,
+                Appearance: [...targetOther, ...playerClothes]
             });
 
-            // Ask the target's prank mod to apply our clothes to them.
-            // If they don't have the mod, only our side of the swap takes effect.
-            sendPrankPacket({
-                type: "swap_apply",
-                source: Player.MemberNumber,
-                target: target.MemberNumber,
-                clothes: playerClothes
-            });
+            // Step 2: put target's saved clothes on player.
+            // Delayed so the room-update broadcast from step 1 arrives and is
+            // processed before our self-update, preventing it from overwriting us.
+            setTimeout(() => {
+                ServerSend("ChatRoomCharacterUpdate", {
+                    ID: Player.AccountName.replace("Online-", ""),
+                    ActivePose: Player.ActivePose,
+                    Appearance: [...playerOther, ...targetClothes]
+                });
+            }, 400);
 
             chatSendCustomAction(getNickname(Player) + " " + getMessage('swapOutfits') + " " + getNickname(target) + " " + getMessage('swapOutfitsSuffix'));
             sendPrankPacket({ type: "swap", source: Player.MemberNumber, target: target.MemberNumber });
@@ -1666,25 +1670,6 @@
                 if (isTarget) prankReact(payload.type);
                 break;
 
-            case "swap_apply":
-                if (isTarget && Array.isArray(payload.clothes)) {
-                    try {
-                        const clothingGroups = [
-                            "Cloth", "ClothLower", "Bra", "Panties", "Socks", "SocksRight", "SocksLeft",
-                            "Shoes", "Gloves", "Hat", "Suit", "SuitLower", "Corset", "ClothOuter", "ClothAccessory"
-                        ];
-                        const myOther = ServerAppearanceBundle(Player.Appearance)
-                            .filter(i => !clothingGroups.includes(i.Group));
-                        ServerSend("ChatRoomCharacterUpdate", {
-                            ID: Player.AccountName.replace("Online-", ""),
-                            ActivePose: Player.ActivePose,
-                            Appearance: [...myOther, ...payload.clothes]
-                        });
-                    } catch(e) {
-                        console.error("[prank] swap_apply failed:", e);
-                    }
-                }
-                break;
         }
     }
 
