@@ -894,32 +894,37 @@
                 "Shoes", "Gloves", "Hat", "Suit", "SuitLower", "Corset", "ClothOuter", "ClothAccessory"
             ];
 
-            // Snapshot BOTH outfits before touching anything
-            const playerBundle = ServerAppearanceBundle(Player.Appearance);
-            const targetBundle = ServerAppearanceBundle(target.Appearance);
+            // Snapshot BOTH outfits as bundles before touching anything
+            const playerClothes = ServerAppearanceBundle(Player.Appearance)
+                .filter(i => clothingGroups.includes(i.Group));
+            const targetClothes = ServerAppearanceBundle(target.Appearance)
+                .filter(i => clothingGroups.includes(i.Group));
 
-            const playerClothes = playerBundle.filter(i => clothingGroups.includes(i.Group));
-            const playerOther   = playerBundle.filter(i => !clothingGroups.includes(i.Group));
-            const targetClothes = targetBundle.filter(i => clothingGroups.includes(i.Group));
-            const targetOther   = targetBundle.filter(i => !clothingGroups.includes(i.Group));
-
-            // Step 1: put player's clothes on target
-            ServerSend("ChatRoomCharacterUpdate", {
-                ID: target.AccountName.replace("Online-", ""),
-                ActivePose: target.ActivePose,
-                Appearance: [...targetOther, ...playerClothes]
+            // Strip clothing from both characters
+            clothingGroups.forEach(group => {
+                try { InventoryRemove(Player, group); } catch(e) {}
+                try { InventoryRemove(target, group); } catch(e) {}
             });
 
-            // Step 2: put target's saved clothes on player.
-            // Delayed so the room-update broadcast from step 1 arrives and is
-            // processed before our self-update, preventing it from overwriting us.
-            setTimeout(() => {
-                ServerSend("ChatRoomCharacterUpdate", {
-                    ID: Player.AccountName.replace("Online-", ""),
-                    ActivePose: Player.ActivePose,
-                    Appearance: [...playerOther, ...targetClothes]
-                });
-            }, 400);
+            // Dress player in target's saved clothes
+            targetClothes.forEach(item => {
+                try {
+                    InventoryWear(Player, item.Name, item.Group, item.Color,
+                        item.Difficulty || 0, item.MemberNumber || Player.MemberNumber, item.Craft);
+                } catch(e) {}
+            });
+
+            // Dress target in player's saved clothes
+            playerClothes.forEach(item => {
+                try {
+                    InventoryWear(target, item.Name, item.Group, item.Color,
+                        item.Difficulty || 0, item.MemberNumber || Player.MemberNumber, item.Craft);
+                } catch(e) {}
+            });
+
+            // Broadcast both updates via BC's own function (handles ID format correctly)
+            ChatRoomCharacterUpdate(Player);
+            ChatRoomCharacterUpdate(target);
 
             chatSendCustomAction(getNickname(Player) + " " + getMessage('swapOutfits') + " " + getNickname(target) + " " + getMessage('swapOutfitsSuffix'));
             sendPrankPacket({ type: "swap", source: Player.MemberNumber, target: target.MemberNumber });
