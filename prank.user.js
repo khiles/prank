@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         lscc - Mischief and Fun
 // @namespace
-// @version      1.9.0
+// @version      1.10.0
 // @description  lscc's prank on her friends
 // @author       Lucifer's Sidechick
 // @include      /^https:\/\/(www\.)?bondage(projects\.elementfx|-(europe|asia))\.com\/.*/
@@ -23,7 +23,7 @@
     window.LSCC_PRANK_LOADED = true;
 
     let modApi;
-    const modversion = "1.9.0";
+    const modversion = "1.10.0";
 
     // ===== Image path helper tool =====
     const ImagePathHelper = {
@@ -2480,6 +2480,79 @@
         });
     }
 
+    // ===== Echo Clothing Integration =====
+
+    /**
+     * Returns true if the given character has Echo Clothing loaded on their client.
+     * Echo Clothing broadcasts presence via the ECHO_INFO2 property.
+     */
+    function hasEchoClothing(character) {
+        return !!(character?.["ECHO_INFO2"]?.["服装拓展"]);
+    }
+
+    /**
+     * Initialise optional Echo Clothing cross-mod hooks.
+     * - Registers this mod with Echo's CharacterTag system so Echo UI can show we're present.
+     * - Subscribes to Echo's shared ActivityEvents bus to trigger prank reactions when an
+     *   Echo player performs a compatible activity on us.
+     * All Echo globals are optional: if Echo isn't loaded nothing breaks.
+     */
+    function initEchoIntegration() {
+        try {
+            // Register with Echo CharacterTag so Echo players can see this mod is active
+            const echoGlobals = globalThis.__ECHO_MOD_GLOBALS__;
+            if (echoGlobals?.["CharacterTag"]?.tag) {
+                echoGlobals["CharacterTag"].tag("lscc's prank", { version: modversion });
+                console.log("[prank] Registered with Echo CharacterTag");
+            }
+
+            // Subscribe to Echo's shared ActivityEvents bus if available
+            const luziGlobals = globalThis.__BC_LUZI_GLOBALS__;
+            if (luziGlobals) {
+                const actEvents = luziGlobals["ActivityEvents@1.0.4"];
+                if (actEvents?.on) {
+                    // Map Echo activity names to our prank reaction types
+                    const echoReactionMap = {
+                        "Tickle":   "tickle",
+                        "Headpat":  "headpat",
+                        "Spank":    "bonk",
+                        "Tease":    "tease",
+                        "Noogie":   "noogie",
+                        "Wedgie":   "wedgie",
+                        "Serenade": "serenade",
+                    };
+
+                    actEvents.on("activity", (data) => {
+                        try {
+                            // Only react when we are the target and another player is the source
+                            const targetNum = data?.target?.MemberNumber ?? data?.targetNumber;
+                            const sourceChar = data?.source ?? data?.sourceCharacter;
+                            if (targetNum !== Player.MemberNumber || !sourceChar) return;
+
+                            const actName = data?.activity?.Name ?? data?.activityName;
+                            const reactionType = actName && echoReactionMap[actName];
+                            if (reactionType) {
+                                prankReact(reactionType, getNickname(sourceChar));
+                            }
+                        } catch (e) {
+                            // Ignore malformed event data
+                        }
+                    });
+                    console.log("[prank] Subscribed to Echo ActivityEvents");
+                }
+
+                // Announce our presence on Echo's ChatRoomEvents bus so Echo clients know
+                // this mod is active (mirrors what Echo itself does via ECHO_INFO2 packets)
+                const chatEvents = luziGlobals["ChatRoomEvents@1.0.4"];
+                if (chatEvents?.emit) {
+                    chatEvents.emit("modPresence", { mod: "lscc's prank", version: modversion });
+                }
+            }
+        } catch (e) {
+            console.warn("[prank] Echo integration init error:", e);
+        }
+    }
+
     // ===== Hook System =====
     function setupHooks() {
         if (!modApi || !modApi.hookFunction) return;
@@ -2598,6 +2671,7 @@
             .then(() => {
             registerActivities();
             setupHooks();
+            initEchoIntegration();
             chatSendLocal(getMessage('loaded'));
             checkForUpdates();
         })
