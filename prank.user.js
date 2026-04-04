@@ -1789,11 +1789,11 @@
                     colorLabel = colorArg;
                 } else {
                     color = getRandomColor();
-                    colorLabel = "random colors";
+                    colorLabel = "random color";
                 }
             } else {
                 color = getRandomColor();
-                colorLabel = "random colors";
+                colorLabel = "random color";
             }
 
             takeSnapshot(target);
@@ -1834,7 +1834,7 @@
             if (!targetArg) return chatSendLocal("Usage: /freeze <player>");
             const target = getPlayer(targetArg);
             if (!target) return chatSendLocal(getMessage('notFound'));
-            if (target.MemberNumber === Player.MemberNumber) return chatSendLocal("You can't freeze yourself");
+            if (target.MemberNumber === Player.MemberNumber) return chatSendLocal("You can't freeze yourself.");
             if (!hasBCItemPermission(target)) return chatSendLocal(getMessage('noPermission'));
             if (freezeLoops.has(target.MemberNumber)) return chatSendLocal(getMessage('freezeAlready') + " " + getNickname(target));
 
