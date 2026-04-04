@@ -2,7 +2,7 @@
 
 A userscript mod for [Bondage Club](https://www.bondageprojects.elementfx.com/) that adds a comprehensive prank system with slash commands and integrated in-game activities.
 
-**Version:** 1.10.0
+**Version:** 1.11.0
 
 ---
 
@@ -50,7 +50,21 @@ Type these in the chat box. `[player]` is the player's name or member number. Na
 | `/taunt [player]` | Taunt a player with a random remark |
 | `/crown [player]` | Crown a player with a random superlative title |
 | `/gossip [player]` | Whisper a random rumor about a player to the room |
+| `/shrink [player]` | Cast a shrinking spell on a player ✨ |
+| `/dye [player] [color\|#hex]` | Dye a player's entire outfit a solid color (random if omitted) |
+| `/freeze [player]` | Lock a player's pose in place 🧊 |
+| `/unfreeze [player]` | Stop freezing a player (omit name to stop all) |
+| `/rename [player] [nickname]` | Temporarily rename a player locally (client-side only) |
+| `/unrename [player]` | Restore a player's original local name |
+| `/countdown [seconds]` | Post a public countdown in chat (1–60 seconds) |
+| `/quiz [player]` | Challenge a player with a trivia question — prank them if they answer wrong! |
+| `/announce [message]` | Broadcast a formatted announcement to the chat room |
+| `/history [player]` | Show your prank history for this session (optionally filtered by player) |
+| `/stats` | Show prank stats and a breakdown by type for this session |
+| `/trust [player]` | Add a player to your trust list so you react to their pranks (show list if no args) |
+| `/untrust [player]` | Remove a player from your trust list |
 | `/list` | Print all available prank commands to local chat |
+| `/help [command]` | Show detailed usage and an example for a single command |
 
 ### Examples
 
@@ -58,6 +72,12 @@ Type these in the chat box. `[player]` is the player's name or member number. Na
 /prank Alice
 /teleport MyRoom
 /swap 12345
+/dye Alice pink
+/dye Alice #FF69B4
+/countdown 5
+/quiz Bob
+/trust Alice
+/help dye
 /stoploop
 ```
 
@@ -91,12 +111,22 @@ These appear in the interaction menu when you click on another character. They i
 | **Noogie** | Give a noogie |
 | **Wedgie** | Give a wedgie |
 | **Tease** | Whisper something that makes them blush |
+| **Spin** | Grab the target and spin them around 🌀 |
+| **Steal Collar** | Unclap the target's collar/necklace 📿 |
+| **Piggyback** | Leap onto the target's back for a piggyback ride 🐎 |
+| **Dye Item** | Splash paint on just one clothing slot at the focused body zone 🎨 |
+| **High Five** | Give a satisfying high five 🙌 |
+| **Trip** | Stick your foot out and trip the target 😄 |
 
 ---
 
 ## Permissions
 
 The mod respects Bondage Club's built-in permission system. Most item-based actions require the target to allow item interactions. The game's standard "allow/deny" settings apply — you cannot prank someone who has locked their permissions.
+
+### Trust List
+
+Use `/trust [player]` to build a whitelist of players whose pranks will trigger visible reactions from your character. If the trust list is non-empty, pranks from players **not** on the list are silently ignored (no reaction emote is posted). Use `/trust` (no arguments) to see your current list, and `/untrust [player]` to remove someone. The list persists across sessions via `localStorage`.
 
 ---
 
@@ -105,8 +135,17 @@ The mod respects Bondage Club's built-in permission system. Most item-based acti
 - **`/teleport`** sends a wormhole action in chat, leaves your current room, and joins the target room. If no room name is given it will prompt you.
 - **`/loop`** pranks a player every 30 seconds. Use `/stoploop` or `/stoploop [player]` to cancel.
 - **`/slowstrip`** removes one clothing item every 3 seconds until the player has nothing left.
+- **`/freeze`** repeatedly re-applies the target's current pose to lock them in place. Requires item permissions. Use `/unfreeze` to release.
+- **`/dye`** supports named colors (`red`, `green`, `blue`, `yellow`, `pink`, `purple`, `orange`, `white`, `black`, `cyan`, `teal`, `gold`, `silver`, `brown`, `lime`, `navy`) or any `#RRGGBB` hex code.
+- **`/quiz`** picks a random trivia question and gives the target 30 seconds to answer in chat. If they get it right, no prank. If time runs out, a random prank is applied automatically.
+- **`/rename`** changes the name shown locally on your screen only — no other players see it.
+- **`/history`** shows the last 20 pranks you performed this session; filter by player name.
+- **`/stats`** shows total prank count and a per-type breakdown.
+- **`/announce`** posts a formatted 📢 announcement visible to everyone in the room.
+- **`/countdown`** posts each tick as a public action message, ending with 💥.
 - **Cut Clothes** activity requires the player to be holding scissors.
 - The mod targets the 3D female character system used by Bondage Club.
+- Set `PRANK_COOLDOWN_MS` (near the top of the script) to a positive number (e.g. `5000` for 5 seconds) to enable a per-player cooldown between item-affecting pranks.
 
 ---
 

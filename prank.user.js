@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         lscc - Mischief and Fun
 // @namespace
-// @version      1.10.0
+// @version      1.11.0
 // @description  lscc's prank on her friends
 // @author       Lucifer's Sidechick
 // @include      /^https:\/\/(www\.)?bondage(projects\.elementfx|-(europe|asia))\.com\/.*/
@@ -23,7 +23,7 @@
     window.LSCC_PRANK_LOADED = true;
 
     let modApi;
-    const modversion = "1.10.0";
+    const modversion = "1.11.0";
 
     // ===== Image path helper tool =====
     const ImagePathHelper = {
@@ -233,7 +233,109 @@
             // Activity labels / descriptions
             actPoke: "Poke",
             actPokeDesc: "SourceCharacter pokes TargetCharacter",
-            actPokeSelf: "SourceCharacter pokes themselves"
+            actPokeSelf: "SourceCharacter pokes themselves",
+
+            // Shrink
+            shrinkAction: "waves a tiny wand and casts a shrinking spell on",
+            shrinkSuffix: "! ✨ Watch out, you might fit in a pocket now...",
+            shrinkSelf: "accidentally shrinks themselves! 🔬",
+
+            // Dye (single color)
+            dyeColorAction: "dips",
+            dyeColorMidfix: "'s entire wardrobe in a vat of",
+            dyeColorSelfAction: "dips their own wardrobe in a vat of",
+
+            // Freeze
+            freezeAction: "casts a freeze spell on",
+            freezeSuffix: "... they can't move! 🧊",
+            freezeSelf: "accidentally freezes themselves in place! 🧊",
+            freezeAlready: "Already freezing",
+            freezeNone: "No active freeze for that player",
+            freezeStopped: "Stopped freeze on",
+            freezeAllStopped: "Stopped all freezes",
+            freezeStarted: "Started freeze on",
+
+            // Rename
+            renameAction: "renames",
+            renameSuffix: "to",
+            unrenameAction: "restores the name of",
+            renameUsage: "Usage: /rename <player> <nickname>",
+            renameNotFound: "Could not find original name for",
+            renameLocalNote: "(local only)",
+
+            // Countdown
+            countdownAction: "starts a countdown:",
+            countdownBoom: "💥 TIME'S UP!",
+
+            // Quiz
+            quizAction: "challenges",
+            quizSuffix: "to answer a trivia question:",
+            quizCorrect: "got it right! No prank for you... this time. 🎉",
+            quizWrong: "couldn't answer in time! Prank incoming... 😈",
+            quizAlready: "Already quizzing",
+
+            // Announce
+            announceUsage: "Usage: /announce <message>",
+
+            // History / Stats
+            historyEmpty: "No prank history for",
+            historyNone: "No prank history this session.",
+            statsNone: "No pranks recorded this session.",
+            statsHeader: "=== Prank Stats ===",
+            statsTotal: "Total pranks:",
+
+            // Trust
+            trustAdded: "Added to trust list:",
+            trustRemoved: "Removed from trust list:",
+            trustAlready: "Already in trust list:",
+            trustNotIn: "Not in trust list:",
+            trustListHeader: "=== Trust List ===",
+            trustEmpty: "Trust list is empty.",
+
+            // Help
+            helpNotFound: "Unknown command:",
+            helpUsage: "Usage: /help <command>",
+            helpExample: "Example:",
+            helpUsageLabel: "Usage:",
+
+            // New activity labels
+            actSpin: "Spin",
+            actSpinDesc: "SourceCharacter grabs TargetCharacter and spins them around! 🌀",
+            actSpinSelf: "SourceCharacter spins around dramatically! 🌀",
+            actStealCollar: "Steal Collar",
+            actStealCollarDesc: "SourceCharacter unclasps TargetCharacter's collar! 📿",
+            actPiggyback: "Piggyback",
+            actPiggybackDesc: "SourceCharacter leaps onto TargetCharacter's back for a piggyback ride! 🐎",
+            actPiggybackSelf: "SourceCharacter piggybacks themselves... somehow.",
+            actDyeOneItem: "Dye Item",
+            actDyeOneItemDesc: "SourceCharacter splashes a dab of paint on TargetCharacter's outfit! 🎨",
+            actDyeOneItemSelf: "SourceCharacter splashes paint on their own outfit! 🎨",
+            actHighFive: "High Five",
+            actHighFiveDesc: "SourceCharacter gives TargetCharacter a high five! 🙌",
+            actHighFiveSelf: "SourceCharacter high fives themselves. Impressive dedication. 🙌",
+            actTrip: "Trip",
+            actTripDesc: "SourceCharacter sticks their foot out and trips TargetCharacter!",
+            actTripSelf: "SourceCharacter trips over their own feet somehow.",
+
+            // New activity chat strings
+            spinAction: "grabs",
+            spinSuffix: "and spins them around! 🌀",
+            spinSelf: "spins around dramatically! 🌀",
+            noCollar: "has no collar",
+            stealCollar: "unclasps",
+            stealCollarSuffix: "'s collar! 📿",
+            piggybackAction: "leaps onto",
+            piggybackSuffix: "'s back for a piggyback ride! 🐎",
+            piggybackSelf: "tries to give themselves a piggyback ride somehow 🤔",
+            dyeOneItemAction: "splashes a dab of paint on",
+            dyeOneItemSuffix: "'s outfit! 🎨",
+            dyeOneItemSelf: "splashes paint on their own outfit! 🎨",
+            highFiveAction: "gives",
+            highFiveSuffix: "a high five! 🙌",
+            highFiveSelf: "high fives themselves with great enthusiasm 🙌",
+            tripAction: "sticks their foot out and trips",
+            tripSuffix: "! 😄",
+            tripSelf: "trips over their own feet 😅"
         }
     };
 
@@ -970,6 +1072,13 @@
     const outfitSnapshots = new Map(); // MemberNumber -> appearance bundle
     const mimicTargets = new Map();    // target MemberNumber -> intervalId
     const pokeCounters = new Map();    // sourceMemberNumber -> count (pokes I've received from them)
+    const prankHistory = [];           // Array of {targetNumber, targetNick, type, timestamp}
+    const freezeLoops = new Map();     // target MemberNumber -> intervalId
+    const renamedPlayers = new Map();  // target MemberNumber -> originalNickname
+    const pendingQuizzes = new Map();  // target MemberNumber -> {question, answer, timerId}
+    let trustList = new Set();         // MemberNumbers whose pranks I will react to
+    const prankCooldowns = new Map();  // target MemberNumber -> last prank timestamp
+    const PRANK_COOLDOWN_MS = 0;       // 0 = disabled; set to e.g. 5000 for 5s cooldown
 
     function takeSnapshot(target) {
         try {
@@ -1294,37 +1403,51 @@
 
     // ===== QoL Commands =====
     const COMMANDS_HELP = [
-        { tag: "steal",      desc: "Steal panties from a player" },
-        { tag: "dissolve",   desc: "Splash potion to dissolve all of a player's clothes" },
-        { tag: "teleport",   desc: "Open a portal and teleport to another room" },
-        { tag: "give",       desc: "Give your held item to a player" },
-        { tag: "streak",     desc: "Strip all your own clothes off" },
-        { tag: "swap",       desc: "Swap outfits with a player" },
-        { tag: "copy",       desc: "Copy a player's outfit" },
-        { tag: "stealhat",   desc: "Steal a player's hat and wear it" },
-        { tag: "stealbra",   desc: "Steal a player's bra" },
-        { tag: "stealgloves",desc: "Steal a player's gloves" },
-        { tag: "stealshoes", desc: "Steal a player's shoes" },
-        { tag: "prank",      desc: "Apply a random prank to a player" },
-        { tag: "roulette",   desc: "Random prank on a random person in the room" },
-        { tag: "silentstrip",desc: "Strip a player silently (no chat message)" },
-        { tag: "slowstrip",  desc: "Gradually strip a player one item at a time" },
-        { tag: "blackout",   desc: "Turn all of a player's clothing black" },
-        { tag: "loop",       desc: "Repeatedly prank a player every 30s" },
-        { tag: "stoploop",   desc: "Stop prank loop (omit name to stop all)" },
-        { tag: "propose",    desc: "Propose to a player" },
-        { tag: "adopt",      desc: "Adopt a player as your child" },
-        { tag: "flash",      desc: "Flash a player" },
-        { tag: "undo",       desc: "Restore a player's last outfit snapshot" },
-        { tag: "pranks",     desc: "Show players with active prank loops" },
-        { tag: "mimic",      desc: "Start mirroring a player's outfit" },
-        { tag: "stopmimic",  desc: "Stop mirroring (omit name to stop all)" },
-        { tag: "poke",       desc: "Poke a player" },
-        { tag: "dare",       desc: "Dare a player to do something (optional: specify the dare)" },
-        { tag: "taunt",      desc: "Taunt a player with a random remark" },
-        { tag: "crown",      desc: "Crown a player with a random superlative title" },
-        { tag: "gossip",     desc: "Whisper a random rumor about a player to the room" },
-        { tag: "list",       desc: "Show all prank commands" },
+        { tag: "steal",       desc: "Steal panties from a player",                     usage: "/steal [player]",                    example: "/steal Alice" },
+        { tag: "dissolve",    desc: "Splash potion to dissolve all of a player's clothes", usage: "/dissolve [player]",              example: "/dissolve Alice" },
+        { tag: "teleport",    desc: "Open a portal and teleport to another room",      usage: "/teleport [room]",                   example: "/teleport MyRoom" },
+        { tag: "give",        desc: "Give your held item to a player",                 usage: "/give [player]",                     example: "/give Alice" },
+        { tag: "streak",      desc: "Strip all your own clothes off",                  usage: "/streak",                            example: "/streak" },
+        { tag: "swap",        desc: "Swap outfits with a player",                      usage: "/swap [player]",                     example: "/swap Alice" },
+        { tag: "copy",        desc: "Copy a player's outfit",                          usage: "/copy [player]",                     example: "/copy Alice" },
+        { tag: "stealhat",    desc: "Steal a player's hat and wear it",                usage: "/stealhat [player]",                 example: "/stealhat Alice" },
+        { tag: "stealbra",    desc: "Steal a player's bra",                            usage: "/stealbra [player]",                 example: "/stealbra Alice" },
+        { tag: "stealgloves", desc: "Steal a player's gloves",                         usage: "/stealgloves [player]",              example: "/stealgloves Alice" },
+        { tag: "stealshoes",  desc: "Steal a player's shoes",                          usage: "/stealshoes [player]",               example: "/stealshoes Alice" },
+        { tag: "prank",       desc: "Apply a random prank to a player",                usage: "/prank [player]",                    example: "/prank Alice" },
+        { tag: "roulette",    desc: "Random prank on a random person in the room",     usage: "/roulette",                          example: "/roulette" },
+        { tag: "silentstrip", desc: "Strip a player silently (no chat message)",       usage: "/silentstrip [player]",              example: "/silentstrip Alice" },
+        { tag: "slowstrip",   desc: "Gradually strip a player one item at a time",     usage: "/slowstrip [player]",                example: "/slowstrip Alice" },
+        { tag: "blackout",    desc: "Turn all of a player's clothing black",           usage: "/blackout [player]",                 example: "/blackout Alice" },
+        { tag: "loop",        desc: "Repeatedly prank a player every 30s",             usage: "/loop [player]",                     example: "/loop Alice" },
+        { tag: "stoploop",    desc: "Stop prank loop (omit name to stop all)",         usage: "/stoploop [player]",                 example: "/stoploop" },
+        { tag: "propose",     desc: "Propose to a player",                             usage: "/propose [player]",                  example: "/propose Alice" },
+        { tag: "adopt",       desc: "Adopt a player as your child",                    usage: "/adopt [player]",                    example: "/adopt Alice" },
+        { tag: "flash",       desc: "Flash a player",                                  usage: "/flash [player]",                    example: "/flash Alice" },
+        { tag: "undo",        desc: "Restore a player's last outfit snapshot",         usage: "/undo [player]",                     example: "/undo Alice" },
+        { tag: "pranks",      desc: "Show players with active prank loops",            usage: "/pranks",                            example: "/pranks" },
+        { tag: "mimic",       desc: "Start mirroring a player's outfit",               usage: "/mimic [player]",                    example: "/mimic Alice" },
+        { tag: "stopmimic",   desc: "Stop mirroring (omit name to stop all)",          usage: "/stopmimic [player]",                example: "/stopmimic" },
+        { tag: "poke",        desc: "Poke a player",                                   usage: "/poke [player]",                     example: "/poke Alice" },
+        { tag: "dare",        desc: "Dare a player to do something (optional: specify the dare)", usage: "/dare [player] [dare text]", example: "/dare Alice do a spin" },
+        { tag: "taunt",       desc: "Taunt a player with a random remark",             usage: "/taunt [player]",                    example: "/taunt Alice" },
+        { tag: "crown",       desc: "Crown a player with a random superlative title",  usage: "/crown [player]",                    example: "/crown Alice" },
+        { tag: "gossip",      desc: "Whisper a random rumor about a player to the room", usage: "/gossip [player]",                 example: "/gossip Alice" },
+        { tag: "shrink",      desc: "Cast a shrinking spell on a player",              usage: "/shrink [player]",                   example: "/shrink Alice" },
+        { tag: "dye",         desc: "Dye a player's outfit a solid color (random if omitted)", usage: "/dye [player] [color|#hex]", example: "/dye Alice pink" },
+        { tag: "freeze",      desc: "Lock a player's pose in place",                   usage: "/freeze [player]",                   example: "/freeze Alice" },
+        { tag: "unfreeze",    desc: "Stop freezing a player (omit name to stop all)",  usage: "/unfreeze [player]",                 example: "/unfreeze Alice" },
+        { tag: "rename",      desc: "Temporarily rename a player locally",             usage: "/rename [player] [nickname]",        example: "/rename Alice Shorty" },
+        { tag: "unrename",    desc: "Restore a player's original local name",          usage: "/unrename [player]",                 example: "/unrename Alice" },
+        { tag: "countdown",   desc: "Post a public countdown in chat (1–60 seconds)",  usage: "/countdown [seconds]",               example: "/countdown 5" },
+        { tag: "quiz",        desc: "Challenge a player with trivia — prank them if wrong!", usage: "/quiz [player]",               example: "/quiz Alice" },
+        { tag: "announce",    desc: "Broadcast a formatted announcement to the room",  usage: "/announce [message]",                example: "/announce Party time!" },
+        { tag: "history",     desc: "Show your prank history this session",            usage: "/history [player]",                  example: "/history" },
+        { tag: "stats",       desc: "Show prank stats for this session",               usage: "/stats",                             example: "/stats" },
+        { tag: "trust",       desc: "Add a player to your prank-reaction trust list (show list if no args)", usage: "/trust [player]", example: "/trust Alice" },
+        { tag: "untrust",     desc: "Remove a player from your trust list",            usage: "/untrust [player]",                  example: "/untrust Alice" },
+        { tag: "list",        desc: "Show all prank commands",                         usage: "/list",                              example: "/list" },
+        { tag: "help",        desc: "Show detailed help for a specific command",       usage: "/help [command]",                    example: "/help prank" },
     ];
 
     function listCommands() {
@@ -1543,6 +1666,375 @@
         }
     }
 
+    // ===== Prank History & Stats =====
+    function logPrank(target, type) {
+        prankHistory.push({
+            targetNumber: target.MemberNumber,
+            targetNick: getNickname(target),
+            type,
+            timestamp: Date.now()
+        });
+    }
+
+    // ===== Cooldown Helper =====
+    function checkAndUpdateCooldown(target) {
+        if (PRANK_COOLDOWN_MS <= 0) return true;
+        const now = Date.now();
+        const last = prankCooldowns.get(target.MemberNumber) || 0;
+        if (now - last < PRANK_COOLDOWN_MS) {
+            const remaining = Math.ceil((PRANK_COOLDOWN_MS - (now - last)) / 1000);
+            chatSendLocal("Cooldown active for " + getNickname(target) + " (" + remaining + "s remaining)");
+            return false;
+        }
+        prankCooldowns.set(target.MemberNumber, now);
+        return true;
+    }
+
+    // ===== Trust List =====
+    function loadTrustList() {
+        try {
+            const saved = localStorage.getItem("lscc_trust_list");
+            if (saved) JSON.parse(saved).forEach(n => trustList.add(n));
+        } catch(e) {}
+    }
+
+    function saveTrustList() {
+        try {
+            localStorage.setItem("lscc_trust_list", JSON.stringify([...trustList]));
+        } catch(e) {}
+    }
+
+    function isPrankAllowed(sourceMemberNumber) {
+        if (trustList.size === 0) return true;
+        return trustList.has(sourceMemberNumber);
+    }
+
+    function trustCmd(args) {
+        const targetArg = (args || "").trim();
+        if (!targetArg) {
+            if (trustList.size === 0) return chatSendLocal(getMessage('trustEmpty'));
+            const lines = [getMessage('trustListHeader')];
+            trustList.forEach(num => {
+                const c = ChatRoomCharacter ? ChatRoomCharacter.find(x => x.MemberNumber === num) : null;
+                lines.push("  " + (c ? getNickname(c) : "#" + num));
+            });
+            return chatSendLocal(lines.join("\n"), 15000);
+        }
+        const target = getPlayer(targetArg);
+        if (!target) return chatSendLocal(getMessage('notFound'));
+        if (trustList.has(target.MemberNumber)) return chatSendLocal(getMessage('trustAlready') + " " + getNickname(target));
+        trustList.add(target.MemberNumber);
+        saveTrustList();
+        chatSendLocal(getMessage('trustAdded') + " " + getNickname(target));
+    }
+
+    function untrustCmd(args) {
+        const targetArg = (args || "").trim();
+        if (!targetArg) return chatSendLocal("Usage: /untrust <player>");
+        const target = getPlayer(targetArg);
+        if (!target) return chatSendLocal(getMessage('notFound'));
+        if (!trustList.has(target.MemberNumber)) return chatSendLocal(getMessage('trustNotIn') + " " + getNickname(target));
+        trustList.delete(target.MemberNumber);
+        saveTrustList();
+        chatSendLocal(getMessage('trustRemoved') + " " + getNickname(target));
+    }
+
+    // ===== /shrink =====
+    function shrinkCmd(args) {
+        try {
+            const targetArg = (args || "").trim();
+            if (!targetArg) return chatSendLocal("Usage: /shrink <player>");
+            const target = getPlayer(targetArg);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            const isSelf = target.MemberNumber === Player.MemberNumber;
+            if (isSelf) {
+                chatSendCustomAction(getNickname(Player) + " " + getMessage('shrinkSelf'));
+            } else {
+                chatSendCustomAction(getNickname(Player) + " " + getMessage('shrinkAction') + " " + getNickname(target) + getMessage('shrinkSuffix'));
+                logPrank(target, "shrink");
+                sendPrankPacket({ type: "shrink", source: Player.MemberNumber, target: target.MemberNumber });
+            }
+        } catch (error) {
+            console.error("Error in shrinkCmd:", error);
+        }
+    }
+
+    // ===== /dye =====
+    const DYE_COLOR_MAP = {
+        red: "#FF0000", green: "#00CC00", blue: "#0055FF", yellow: "#FFE000",
+        pink: "#FF69B4", purple: "#9400D3", orange: "#FF8C00", white: "#FFFFFF",
+        black: "#000000", cyan: "#00CCCC", teal: "#008080", gold: "#FFD700",
+        silver: "#C0C0C0", brown: "#8B4513", lime: "#00FF00", navy: "#000080"
+    };
+
+    function dyeColorCmd(args) {
+        try {
+            const parts = (args || "").trim().split(/\s+/);
+            if (!parts[0]) return chatSendLocal("Usage: /dye <player> [color|#hex]");
+            const target = getPlayer(parts[0]);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            if (!hasBCItemPermission(target)) return chatSendLocal(getMessage('noPermission'));
+            if (!checkAndUpdateCooldown(target)) return;
+
+            const colorArg = parts[1] || null;
+            let color;
+            let colorLabel;
+            if (colorArg) {
+                const mapped = DYE_COLOR_MAP[colorArg.toLowerCase()];
+                if (mapped) {
+                    color = mapped;
+                    colorLabel = colorArg.toLowerCase();
+                } else if (/^#[0-9A-Fa-f]{6}$/.test(colorArg)) {
+                    color = colorArg;
+                    colorLabel = colorArg;
+                } else {
+                    color = getRandomColor();
+                    colorLabel = "random colors";
+                }
+            } else {
+                color = getRandomColor();
+                colorLabel = "random colors";
+            }
+
+            takeSnapshot(target);
+            const clothingGroups = [
+                "Cloth", "ClothLower", "Bra", "Panties", "Socks", "SocksRight", "SocksLeft",
+                "Shoes", "Gloves", "Hat", "Suit", "SuitLower", "Corset", "ClothOuter",
+                "ClothAccessory", "Necklace", "Mask", "Garters", "Bracelet", "Jewelry"
+            ];
+            const bundle = ServerAppearanceBundle(target.Appearance).map(item => {
+                if (clothingGroups.includes(item.Group)) {
+                    item.Color = Array.isArray(item.Color) ? item.Color.map(() => color) : color;
+                }
+                return item;
+            });
+            ServerSend("ChatRoomCharacterUpdate", {
+                ID: target.ID === 0 ? target.OnlineID : target.AccountName.replace("Online-", ""),
+                ActivePose: target.ActivePose,
+                Appearance: bundle
+            });
+
+            const isSelf = target.MemberNumber === Player.MemberNumber;
+            if (isSelf) {
+                chatSendCustomAction(getNickname(Player) + " " + getMessage('dyeColorSelfAction') + " " + colorLabel + "! 🎨");
+            } else {
+                chatSendCustomAction(getNickname(Player) + " " + getMessage('dyeColorAction') + " " + getNickname(target) + getMessage('dyeColorMidfix') + " " + colorLabel + "! 🎨");
+                logPrank(target, "dye_color");
+                sendPrankPacket({ type: "dye_color", source: Player.MemberNumber, target: target.MemberNumber });
+            }
+        } catch (error) {
+            console.error("Error in dyeColorCmd:", error);
+        }
+    }
+
+    // ===== /freeze / /unfreeze =====
+    function freezeCmd(args) {
+        try {
+            const targetArg = (args || "").trim();
+            if (!targetArg) return chatSendLocal("Usage: /freeze <player>");
+            const target = getPlayer(targetArg);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            if (target.MemberNumber === Player.MemberNumber) return chatSendLocal("You can't freeze yourself");
+            if (!hasBCItemPermission(target)) return chatSendLocal(getMessage('noPermission'));
+            if (freezeLoops.has(target.MemberNumber)) return chatSendLocal(getMessage('freezeAlready') + " " + getNickname(target));
+
+            const frozenPose = target.ActivePose ? [...target.ActivePose] : [];
+            const id = setInterval(() => {
+                const fresh = ChatRoomCharacter ? ChatRoomCharacter.find(c => c.MemberNumber === target.MemberNumber) : null;
+                if (!fresh) return;
+                ServerSend("ChatRoomCharacterUpdate", {
+                    ID: fresh.ID === 0 ? fresh.OnlineID : fresh.AccountName.replace("Online-", ""),
+                    ActivePose: frozenPose,
+                    Appearance: ServerAppearanceBundle(fresh.Appearance)
+                });
+            }, 2000);
+
+            freezeLoops.set(target.MemberNumber, id);
+            chatSendCustomAction(getNickname(Player) + " " + getMessage('freezeAction') + " " + getNickname(target) + getMessage('freezeSuffix'));
+            logPrank(target, "freeze");
+            sendPrankPacket({ type: "freeze", source: Player.MemberNumber, target: target.MemberNumber });
+            chatSendLocal(getMessage('freezeStarted') + " " + getNickname(target));
+        } catch (error) {
+            console.error("Error in freezeCmd:", error);
+        }
+    }
+
+    function unfreezeCmd(args) {
+        const targetArg = (args || "").trim();
+        if (!targetArg) {
+            freezeLoops.forEach(id => clearInterval(id));
+            freezeLoops.clear();
+            return chatSendLocal(getMessage('freezeAllStopped'));
+        }
+        const target = getPlayer(targetArg);
+        if (!target || !freezeLoops.has(target.MemberNumber)) return chatSendLocal(getMessage('freezeNone'));
+        clearInterval(freezeLoops.get(target.MemberNumber));
+        freezeLoops.delete(target.MemberNumber);
+        chatSendLocal(getMessage('freezeStopped') + " " + getNickname(target));
+    }
+
+    // ===== /rename / /unrename =====
+    function renameCmd(args) {
+        try {
+            const parts = (args || "").trim().split(/\s+/);
+            if (parts.length < 2) return chatSendLocal(getMessage('renameUsage'));
+            const target = getPlayer(parts[0]);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            const newNick = parts.slice(1).join(" ");
+            if (!renamedPlayers.has(target.MemberNumber)) {
+                renamedPlayers.set(target.MemberNumber, target.Nickname || target.Name);
+            }
+            target.Nickname = newNick;
+            chatSendLocal(getMessage('renameAction') + " " + (target.Name || target.AccountName) + " " + getMessage('renameSuffix') + " \"" + newNick + "\" " + getMessage('renameLocalNote'));
+        } catch (error) {
+            console.error("Error in renameCmd:", error);
+        }
+    }
+
+    function unrenameCmd(args) {
+        try {
+            const targetArg = (args || "").trim();
+            if (!targetArg) return chatSendLocal("Usage: /unrename <player name or number>");
+            const target = getPlayer(targetArg);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            if (!renamedPlayers.has(target.MemberNumber)) return chatSendLocal(getMessage('renameNotFound') + " " + (target.Name || target.AccountName));
+            target.Nickname = renamedPlayers.get(target.MemberNumber);
+            renamedPlayers.delete(target.MemberNumber);
+            chatSendLocal(getMessage('unrenameAction') + " " + (target.Name || target.AccountName));
+        } catch (error) {
+            console.error("Error in unrenameCmd:", error);
+        }
+    }
+
+    // ===== /countdown =====
+    function countdownCmd(args) {
+        try {
+            const secs = parseInt((args || "").trim());
+            if (!secs || secs < 1 || secs > 60) return chatSendLocal("Usage: /countdown <1-60>");
+            chatSendCustomAction(getNickname(Player) + " " + getMessage('countdownAction'));
+            let remaining = secs;
+            const id = setInterval(() => {
+                if (remaining > 0) {
+                    chatSendCustomAction(remaining + "…");
+                    remaining--;
+                } else {
+                    clearInterval(id);
+                    chatSendCustomAction(getMessage('countdownBoom'));
+                }
+            }, 1000);
+        } catch (error) {
+            console.error("Error in countdownCmd:", error);
+        }
+    }
+
+    // ===== /quiz =====
+    const QUIZ_QUESTIONS = [
+        { q: "What color do you get when you mix red and blue?", a: "purple" },
+        { q: "How many sides does a triangle have?", a: "3" },
+        { q: "What is the opposite of hot?", a: "cold" },
+        { q: "What animal says 'moo'?", a: "cow" },
+        { q: "What comes after Monday?", a: "tuesday" },
+        { q: "How many legs does a spider have?", a: "8" },
+        { q: "What is 7 + 5?", a: "12" },
+        { q: "What season comes after winter?", a: "spring" },
+        { q: "What is the biggest planet in our solar system?", a: "jupiter" },
+        { q: "How many fingers are on one hand?", a: "5" },
+        { q: "What do bees make?", a: "honey" },
+        { q: "How many days are in a week?", a: "7" }
+    ];
+
+    function quizCmd(args) {
+        try {
+            const targetArg = (args || "").trim();
+            if (!targetArg) return chatSendLocal("Usage: /quiz <player>");
+            const target = getPlayer(targetArg);
+            if (!target) return chatSendLocal(getMessage('notFound'));
+            if (pendingQuizzes.has(target.MemberNumber)) return chatSendLocal(getMessage('quizAlready') + " " + getNickname(target));
+
+            const qz = QUIZ_QUESTIONS[Math.floor(Math.random() * QUIZ_QUESTIONS.length)];
+            const timerId = setTimeout(() => {
+                if (pendingQuizzes.has(target.MemberNumber)) {
+                    pendingQuizzes.delete(target.MemberNumber);
+                    chatSendCustomAction(getNickname(target) + " " + getMessage('quizWrong'));
+                    setTimeout(() => applyRandomPrank(target), 1000);
+                }
+            }, 30000);
+
+            pendingQuizzes.set(target.MemberNumber, { question: qz.q, answer: qz.a, timerId });
+            chatSendCustomAction(getNickname(Player) + " " + getMessage('quizAction') + " " + getNickname(target) + " " + getMessage('quizSuffix') + " \"" + qz.q + "\" (30 seconds!)");
+        } catch (error) {
+            console.error("Error in quizCmd:", error);
+        }
+    }
+
+    // ===== /announce =====
+    function announceCmd(args) {
+        try {
+            const msg = (args || "").trim();
+            if (!msg) return chatSendLocal(getMessage('announceUsage'));
+            chatSendCustomAction("📢 【 " + msg + " 】");
+        } catch (error) {
+            console.error("Error in announceCmd:", error);
+        }
+    }
+
+    // ===== /history =====
+    function historyCmd(args) {
+        try {
+            const targetArg = (args || "").trim();
+            if (prankHistory.length === 0) return chatSendLocal(getMessage('historyNone'));
+
+            let filtered = prankHistory;
+            if (targetArg) {
+                const target = getPlayer(targetArg);
+                if (!target) return chatSendLocal(getMessage('notFound'));
+                filtered = prankHistory.filter(e => e.targetNumber === target.MemberNumber);
+                if (filtered.length === 0) return chatSendLocal(getMessage('historyEmpty') + " " + getNickname(target));
+            }
+
+            const lines = ["=== Prank History ==="];
+            filtered.slice(-20).forEach(e => {
+                const time = new Date(e.timestamp).toLocaleTimeString();
+                lines.push("  [" + time + "] " + e.type + " → " + e.targetNick);
+            });
+            chatSendLocal(lines.join("\n"), 20000);
+        } catch (error) {
+            console.error("Error in historyCmd:", error);
+        }
+    }
+
+    // ===== /stats =====
+    function statsCmd() {
+        try {
+            if (prankHistory.length === 0) return chatSendLocal(getMessage('statsNone'));
+            const counts = {};
+            prankHistory.forEach(e => { counts[e.type] = (counts[e.type] || 0) + 1; });
+            const lines = [getMessage('statsHeader'), "  " + getMessage('statsTotal') + " " + prankHistory.length];
+            Object.entries(counts).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+                lines.push("  " + type + ": " + count);
+            });
+            chatSendLocal(lines.join("\n"), 20000);
+        } catch (error) {
+            console.error("Error in statsCmd:", error);
+        }
+    }
+
+    // ===== /help =====
+    function helpCmd(args) {
+        try {
+            const tag = (args || "").trim().toLowerCase().replace(/^\//, "");
+            if (!tag) return chatSendLocal(getMessage('helpUsage'));
+            const cmd = COMMANDS_HELP.find(c => c.tag === tag);
+            if (!cmd) return chatSendLocal(getMessage('helpNotFound') + " /" + tag);
+            const lines = ["/" + cmd.tag + " — " + cmd.desc];
+            if (cmd.usage) lines.push("  " + getMessage('helpUsageLabel') + " " + cmd.usage);
+            if (cmd.example) lines.push("  " + getMessage('helpExample') + " " + cmd.example);
+            chatSendLocal(lines.join("\n"), 15000);
+        } catch (error) {
+            console.error("Error in helpCmd:", error);
+        }
+    }
+
     // ===== Hidden packet handler =====
     const PRANK_REACTIONS = {
         tickle:        ["bursts into uncontrollable laughter, tears streaming 😂",
@@ -1603,7 +2095,45 @@
         swap:          ["looks down at their new outfit with deep confusion 😶",
                         "glances between themselves and the other person in bewilderment 👀"],
         copy:          ["squints and looks between themselves and their copycat 👀",
-                        "puts their hands on their hips, thoroughly unimpressed 😒"]
+                        "puts their hands on their hips, thoroughly unimpressed 😒"],
+        propose:       ["looks startled and goes bright pink 💍",
+                        "claps their hands to their cheeks in shock 😳",
+                        "stares with wide unbelieving eyes 💕"],
+        adopt:         ["blinks in utter confusion at what just happened 👨‍👧",
+                        "slowly processes the new family arrangement 🤔",
+                        "looks both touched and baffled simultaneously 😶"],
+        blackout:      ["looks down at their pitch-black outfit in dismay 🖤",
+                        "stares at the darkness that was once a colorful wardrobe 😶",
+                        "holds up a sleeve and squints at it in disbelief 🖤"],
+        mimic:         ["notices something eerily familiar about someone's outfit 🪞",
+                        "does a double-take at the suspiciously similar-looking person 👀",
+                        "looks between themselves and the copycat with growing suspicion 🪞"],
+        shrink:        ["looks down at their hands in sudden alarm 🔬",
+                        "glances around as the room suddenly seems much bigger 😱",
+                        "squeaks in surprise and looks very small indeed ✨"],
+        freeze:        ["goes completely rigid and can't seem to move at all! 🧊",
+                        "stands stock-still, apparently frozen in place 🥶",
+                        "blinks rapidly, willing their limbs to respond 🧊"],
+        steal_collar:  ["reaches for their neck in surprise 😱",
+                        "looks confused at the sudden lightness around their neck 🤔",
+                        "pats their bare neck with wide eyes 📿"],
+        spin:          ["spins around with a startled yelp! 🌀",
+                        "stumbles dizzily when released, holding their head 😵",
+                        "grabs onto the nearest thing to stop spinning 🌀"],
+        piggyback:     ["staggers slightly under the unexpected weight 😅",
+                        "laughs and reaches back to hold on properly 😄",
+                        "protests loudly while being hauled around 😤"],
+        highfive:      ["claps hands with a satisfying smack! 🙌",
+                        "grins and returns the high five enthusiastically 🙌"],
+        trip:          ["catches themselves just in time 😅",
+                        "stumbles forward with a very surprised noise 😮",
+                        "trips and does a surprisingly graceful recovery 🤸"],
+        dye_color:     ["looks down at their now-monochrome outfit in dismay 😱",
+                        "stares at the overwhelming single color in pure horror 🎨",
+                        "opens their mouth to protest and simply can't find the words 😶"],
+        dye_one_item:  ["notices a suspicious new splash of color on their outfit 🎨",
+                        "looks at the newly painted item and sighs deeply 😩",
+                        "stares at the freshly-dyed spot with a resigned expression 😶"]
     };
 
     function prankReact(type, sourceNick) {
@@ -1616,6 +2146,9 @@
     function handlePrankPacket(payload, senderMemberNumber) {
         if (!payload || !payload.type) return;
         const isTarget = payload.target === Player.MemberNumber;
+
+        // Trust check: if trust list is non-empty and source is not in it, suppress reactions
+        if (isTarget && !isPrankAllowed(payload.source)) return;
 
         switch (payload.type) {
             case "poke": {
@@ -1643,16 +2176,28 @@
                 if (isTarget) chatSendLocal("You've been taunted! Retaliate with /taunt 😏");
                 break;
             case "propose":
-                if (isTarget) chatSendLocal("You've been proposed to! 💍 How will you respond?");
+                if (isTarget) {
+                    chatSendLocal("You've been proposed to! 💍 How will you respond?");
+                    prankReact("propose");
+                }
                 break;
             case "adopt":
-                if (isTarget) chatSendLocal("You've been adopted! 👨‍👧");
+                if (isTarget) {
+                    chatSendLocal("You've been adopted! 👨‍👧");
+                    prankReact("adopt");
+                }
                 break;
             case "mimic":
-                if (isTarget) chatSendLocal("Someone is mimicking your outfit! 🪞");
+                if (isTarget) {
+                    chatSendLocal("Someone is mimicking your outfit! 🪞");
+                    prankReact("mimic");
+                }
                 break;
             case "blackout":
-                if (isTarget) chatSendLocal("Your outfit has been turned all black... 🖤");
+                if (isTarget) {
+                    chatSendLocal("Your outfit has been turned all black... 🖤");
+                    prankReact("blackout");
+                }
                 break;
             case "tickle":
             case "headpat":
@@ -1666,12 +2211,21 @@
             case "steal_hat":
             case "steal_gloves":
             case "steal_shoes":
+            case "steal_collar":
             case "dissolve":
             case "dye_clothes":
             case "dye_hair":
+            case "dye_color":
+            case "dye_one_item":
             case "flash":
             case "swap":
             case "copy":
+            case "shrink":
+            case "freeze":
+            case "spin":
+            case "piggyback":
+            case "highfive":
+            case "trip":
                 if (isTarget) prankReact(payload.type);
                 break;
 
@@ -1729,6 +2283,10 @@
 
         actData.CustomPrerequisiteFuncs.set("lsccHasGloves", function(target1, target2, group) {
             return !!InventoryGet(target2, "Gloves");
+        });
+
+        actData.CustomPrerequisiteFuncs.set("lsccHasNecklace", function(target1, target2, group) {
+            return !!InventoryGet(target2, "Necklace");
         });
 
         const clothingTargets = [
@@ -2496,6 +3054,193 @@
             },
             CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
         });
+
+        // 24. Spin
+        AddActivity({
+            Activity: { Name: "Spin", MaxProgress: 0, MaxProgressSelf: 0, Prerequisite: [] },
+            Targets: [
+                { TargetLabel: getMessage('actSpin'), Name: "ItemArms", SelfAllowed: true, TargetAction: getMessage('actSpinDesc'), TargetSelfAction: getMessage('actSpinSelf') }
+            ],
+            CustomPrereqs: [{ Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") }],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    const isSelf = target.MemberNumber === Player.MemberNumber;
+                    if (isSelf) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('spinSelf'));
+                    } else {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('spinAction') + " " + getNickname(target) + " " + getMessage('spinSuffix'));
+                        logPrank(target, "spin");
+                        sendPrankPacket({ type: "spin", source: Player.MemberNumber, target: target.MemberNumber });
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
+        });
+
+        // 25. Steal Collar
+        AddActivity({
+            Activity: { Name: "StealCollar", MaxProgress: 40, MaxProgressSelf: 40, Prerequisite: [] },
+            Targets: [
+                { TargetLabel: getMessage('actStealCollar'), Name: "ItemNeck", SelfAllowed: false, TargetAction: getMessage('actStealCollarDesc') },
+                { TargetLabel: getMessage('actStealCollar'), Name: "ItemNeckAccessories", SelfAllowed: false, TargetAction: getMessage('actStealCollarDesc') }
+            ],
+            CustomPrereqs: [
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
+                { Name: "lsccHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBCItemPermission") },
+                { Name: "lsccHasNecklace", Func: actData.CustomPrerequisiteFuncs.get("lsccHasNecklace") }
+            ],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    if (!InventoryGet(target, "Necklace")) {
+                        chatSendCustomAction(getNickname(target) + " " + getMessage('noCollar'));
+                        return;
+                    }
+                    takeSnapshot(target);
+                    InventoryRemove(target, "Necklace");
+                    ChatRoomCharacterUpdate(target);
+                    chatSendCustomAction(getNickname(Player) + " " + getMessage('stealCollar') + " " + getNickname(target) + getMessage('stealCollarSuffix'));
+                    logPrank(target, "steal_collar");
+                    sendPrankPacket({ type: "steal_collar", source: Player.MemberNumber, target: target.MemberNumber });
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
+        });
+
+        // 26. Piggyback
+        AddActivity({
+            Activity: { Name: "Piggyback", MaxProgress: 0, MaxProgressSelf: 0, Prerequisite: [] },
+            Targets: [
+                { TargetLabel: getMessage('actPiggyback'), Name: "ItemTorso", SelfAllowed: true, TargetAction: getMessage('actPiggybackDesc'), TargetSelfAction: getMessage('actPiggybackSelf') },
+                { TargetLabel: getMessage('actPiggyback'), Name: "ItemTorso2", SelfAllowed: true, TargetAction: getMessage('actPiggybackDesc'), TargetSelfAction: getMessage('actPiggybackSelf') }
+            ],
+            CustomPrereqs: [{ Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") }],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    const isSelf = target.MemberNumber === Player.MemberNumber;
+                    if (isSelf) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('piggybackSelf'));
+                    } else {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('piggybackAction') + " " + getNickname(target) + getMessage('piggybackSuffix'));
+                        logPrank(target, "piggyback");
+                        sendPrankPacket({ type: "piggyback", source: Player.MemberNumber, target: target.MemberNumber });
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
+        });
+
+        // 27. Dye One Item
+        AddActivity({
+            Activity: { Name: "DyeOneItem", MaxProgress: 30, MaxProgressSelf: 30, Prerequisite: [] },
+            Targets: clothingTargets.map(t => ({
+                TargetLabel: getMessage('actDyeOneItem'),
+                Name: t,
+                SelfAllowed: true,
+                TargetAction: getMessage('actDyeOneItemDesc'),
+                TargetSelfAction: getMessage('actDyeOneItemSelf')
+            })),
+            CustomPrereqs: [
+                { Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") },
+                { Name: "lsccHasBCItemPermission", Func: actData.CustomPrerequisiteFuncs.get("lsccHasBCItemPermission") },
+                { Name: "lsccTargetHasClothing", Func: actData.CustomPrerequisiteFuncs.get("lsccTargetHasClothing") }
+            ],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    const focusGroup = target.FocusGroup?.Name;
+                    if (!focusGroup) return;
+                    const dyeMap = {
+                        "ItemNeck": ["Suit", "Cloth", "Bra"], "ItemNipples": ["Suit", "Cloth", "Bra"],
+                        "ItemBreast": ["Suit", "Cloth", "Bra"], "ItemTorso": ["Suit", "Cloth", "Bra"],
+                        "ItemNeckAccessories": ["Suit", "Cloth", "Bra"], "ItemNeckRestraints": ["Suit", "Cloth", "Bra"],
+                        "ItemNipplesPiercings": ["Suit", "Cloth", "Bra"], "ItemTorso2": ["Suit", "Cloth", "Bra"],
+                        "ItemHands": ["Gloves"], "ItemHandheld": ["Gloves"],
+                        "ItemPelvis": ["ClothLower", "SuitLower", "Panties"],
+                        "ItemButt": ["ClothLower", "SuitLower", "Panties"],
+                        "ItemVulvaPiercings": ["ClothLower", "SuitLower", "Panties"],
+                        "ItemVulva": ["ClothLower", "SuitLower", "Panties"],
+                        "ItemPenis": ["ClothLower", "SuitLower", "Panties"],
+                        "ItemBoots": ["Shoes", "Socks", "SocksRight", "SocksLeft"],
+                        "ItemLegs": ["Socks", "SocksRight", "SocksLeft"],
+                        "ItemFeet": ["Socks", "SocksRight", "SocksLeft"],
+                        "ItemMouth": ["Mask"], "ItemMouth2": ["Mask"], "ItemMouth3": ["Mask"]
+                    };
+                    const priority = dyeMap[focusGroup];
+                    if (!priority) return;
+                    const dyeGroup = priority.find(g => InventoryGet(target, g));
+                    if (!dyeGroup) {
+                        chatSendCustomAction(getNickname(target) + " " + getMessage('nothingToRemove'));
+                        return;
+                    }
+                    takeSnapshot(target);
+                    const newColor = getRandomColor();
+                    const bundle = ServerAppearanceBundle(target.Appearance).map(item => {
+                        if (item.Group === dyeGroup) {
+                            item.Color = Array.isArray(item.Color) ? item.Color.map(() => newColor) : newColor;
+                        }
+                        return item;
+                    });
+                    ServerSend("ChatRoomCharacterUpdate", {
+                        ID: target.ID === 0 ? target.OnlineID : target.AccountName.replace("Online-", ""),
+                        ActivePose: target.ActivePose,
+                        Appearance: bundle
+                    });
+                    const isSelf = target.MemberNumber === Player.MemberNumber;
+                    if (isSelf) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('dyeOneItemSelf'));
+                    } else {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('dyeOneItemAction') + " " + getNickname(target) + getMessage('dyeOneItemSuffix'));
+                        logPrank(target, "dye_one_item");
+                        sendPrankPacket({ type: "dye_one_item", source: Player.MemberNumber, target: target.MemberNumber });
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/ItemHandheld/Preview/PotionBottle.png")
+        });
+
+        // 28. High Five
+        AddActivity({
+            Activity: { Name: "HighFive", MaxProgress: 0, MaxProgressSelf: 0, Prerequisite: [] },
+            Targets: [
+                { TargetLabel: getMessage('actHighFive'), Name: "ItemHands", SelfAllowed: true, TargetAction: getMessage('actHighFiveDesc'), TargetSelfAction: getMessage('actHighFiveSelf') },
+                { TargetLabel: getMessage('actHighFive'), Name: "ItemArms", SelfAllowed: true, TargetAction: getMessage('actHighFiveDesc'), TargetSelfAction: getMessage('actHighFiveSelf') }
+            ],
+            CustomPrereqs: [{ Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") }],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    const isSelf = target.MemberNumber === Player.MemberNumber;
+                    if (isSelf) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('highFiveSelf'));
+                    } else {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('highFiveAction') + " " + getNickname(target) + " " + getMessage('highFiveSuffix'));
+                        sendPrankPacket({ type: "highfive", source: Player.MemberNumber, target: target.MemberNumber });
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
+        });
+
+        // 29. Trip
+        AddActivity({
+            Activity: { Name: "Trip", MaxProgress: 0, MaxProgressSelf: 0, Prerequisite: [] },
+            Targets: [
+                { TargetLabel: getMessage('actTrip'), Name: "ItemLegs", SelfAllowed: true, TargetAction: getMessage('actTripDesc'), TargetSelfAction: getMessage('actTripSelf') },
+                { TargetLabel: getMessage('actTrip'), Name: "ItemFeet", SelfAllowed: true, TargetAction: getMessage('actTripDesc'), TargetSelfAction: getMessage('actTripSelf') }
+            ],
+            CustomPrereqs: [{ Name: "lsccCanInteract", Func: actData.CustomPrerequisiteFuncs.get("lsccCanInteract") }],
+            CustomAction: {
+                Func: (target, args, next) => {
+                    const isSelf = target.MemberNumber === Player.MemberNumber;
+                    if (isSelf) {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('tripSelf'));
+                    } else {
+                        chatSendCustomAction(getNickname(Player) + " " + getMessage('tripAction') + " " + getNickname(target) + getMessage('tripSuffix'));
+                        logPrank(target, "trip");
+                        sendPrankPacket({ type: "trip", source: Player.MemberNumber, target: target.MemberNumber });
+                    }
+                }
+            },
+            CustomImage: ImagePathHelper.getAssetURL("Female3DCG/Activity/Caress.png")
+        });
     }
 
     // ===== Echo Clothing Integration =====
@@ -2586,6 +3331,20 @@
                 }
                 return;
             }
+            // Quiz answer detection: check if a pending-quiz target typed the right answer
+            if (msg && msg.Type === "Chat" && pendingQuizzes.size > 0) {
+                const senderNum = msg.Sender;
+                if (pendingQuizzes.has(senderNum)) {
+                    const quiz = pendingQuizzes.get(senderNum);
+                    const content = (msg.Content || "").toLowerCase().trim();
+                    if (content.includes(quiz.answer.toLowerCase())) {
+                        clearTimeout(quiz.timerId);
+                        pendingQuizzes.delete(senderNum);
+                        const src = ChatRoomCharacter ? ChatRoomCharacter.find(c => c.MemberNumber === senderNum) : null;
+                        chatSendCustomAction((src ? getNickname(src) : "They") + " " + getMessage('quizCorrect'));
+                    }
+                }
+            }
             return next(args);
         });
 
@@ -2649,6 +3408,7 @@
     // ===== Initialization =====
     waitFor(() => typeof Player !== "undefined" && typeof Player.MemberNumber === "number" && typeof CommandCombine === "function")
         .then(() => {
+        loadTrustList();
         // Register commands
         CommandCombine([
                 { Tag: "steal", Description: "Steal panties", Action: (args) => stealPanties(args) },
@@ -2681,7 +3441,21 @@
                 { Tag: "taunt", Description: "Taunt a player with a random remark", Action: (args) => tauntCmd(args) },
                 { Tag: "crown", Description: "Crown a player with a random superlative title", Action: (args) => crownCmd(args) },
                 { Tag: "gossip", Description: "Whisper a random rumor about a player to the room", Action: (args) => gossipCmd(args) },
-                { Tag: "list", Description: "Show all prank commands", Action: () => listCommands() }
+                { Tag: "shrink", Description: "Cast a shrinking spell on a player", Action: (args) => shrinkCmd(args) },
+                { Tag: "dye", Description: "Dye a player's outfit a solid color", Action: (args) => dyeColorCmd(args) },
+                { Tag: "freeze", Description: "Lock a player's pose in place", Action: (args) => freezeCmd(args) },
+                { Tag: "unfreeze", Description: "Stop freezing a player", Action: (args) => unfreezeCmd(args) },
+                { Tag: "rename", Description: "Temporarily rename a player (local only)", Action: (args) => renameCmd(args) },
+                { Tag: "unrename", Description: "Restore a player's original local name", Action: (args) => unrenameCmd(args) },
+                { Tag: "countdown", Description: "Post a public countdown in chat", Action: (args) => countdownCmd(args) },
+                { Tag: "quiz", Description: "Challenge a player with a trivia question", Action: (args) => quizCmd(args) },
+                { Tag: "announce", Description: "Broadcast a formatted announcement", Action: (args) => announceCmd(args) },
+                { Tag: "history", Description: "Show your prank history this session", Action: (args) => historyCmd(args) },
+                { Tag: "stats", Description: "Show prank stats for this session", Action: () => statsCmd() },
+                { Tag: "trust", Description: "Manage your prank-reaction trust list", Action: (args) => trustCmd(args) },
+                { Tag: "untrust", Description: "Remove a player from your trust list", Action: (args) => untrustCmd(args) },
+                { Tag: "list", Description: "Show all prank commands", Action: () => listCommands() },
+                { Tag: "help", Description: "Show detailed help for a command", Action: (args) => helpCmd(args) }
             ]);
 
         // Wait for activity system
